@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Harmoniq — Onboarding</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep: #0e0a1a;
+    --bg-card: #1a1330;
+    --bg-card-hover: #221a3d;
+    --border-default: rgba(255,255,255,0.08);
+    --border-selected: #e040a0;
+    --pink: #e040a0;
+    --pink-light: #f472b6;
+    --purple: #a855f7;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.55);
+    --glow-pink: 0 0 18px rgba(224,64,160,0.55), 0 0 40px rgba(224,64,160,0.2);
+    --glow-card: 0 0 0 2px #e040a0, 0 0 16px rgba(224,64,160,0.35);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg,#070316 0%,var(--bg-deep) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 28px 24px 48px;
+  }
+
+  /* Make app wider to use more viewport */
+  .app {
+    width: 100%;
+    max-width: 920px; /* widened */
+    display: grid;
+    grid-template-columns: 1fr; /* could later be two-column */
+    gap: 18px;
+  }
+
+  /* Header area with account actions */
+  .topbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 10px 14px;
+  }
+  .logo { font-size: 2.2rem; font-weight:800; background: linear-gradient(135deg,#f472b6,#a855f7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+  .account-actions { display:flex; gap:10px; align-items:center; }
+  .pill { background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:12px; font-weight:700; }
+
+  /* Cards and screens */
+  .card { background: var(--bg-card); border:1px solid var(--border-default); border-radius:14px; padding:18px; }
+
+  /* Step indicator */
+  .step-indicator { display:flex; gap:8px; margin:12px 0 6px; }
+  .step-dot { width:8px; height:8px; border-radius:50%; background: rgba(255,255,255,0.12); }
+  .step-dot.active { background:var(--pink); width:24px; border-radius:6px; box-shadow:0 0 10px rgba(224,64,160,0.7); }
+
+  /* Headings */
+  .section-heading { font-size:1.35rem; font-weight:700; color:var(--pink-light); margin-bottom:6px; }
+  .section-sub { color:var(--text-secondary); margin-bottom:12px; }
+
+  /* Selection counter */
+  .selection-counter { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(224,64,160,0.06)); border-radius:12px; padding:10px 14px; font-weight:600; color:var(--purple); margin-bottom:16px; }
+
+  /* Responsive emotion grid - fill space */
+  .emotion-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap:14px; }
+  .emotion-card { border-radius:12px; padding:16px; text-align:center; cursor:pointer; background:var(--bg-card); border:1.25px solid var(--border-default); transition:all .18s; }
+  .emotion-card:hover { transform:translateY(-6px); border-color:rgba(224,64,160,0.28); background:var(--bg-card-hover); }
+  .emotion-card.selected { border-color:var(--border-selected); box-shadow:var(--glow-card); background: rgba(224,64,160,0.06); }
+  .emotion-emoji { font-size:2rem; display:block; margin-bottom:8px; }
+  .emotion-label { font-weight:700; color:var(--text-primary); }
+
+  /* Larger CTA */
+  .btn-primary { width:100%; padding:14px 18px; background:linear-gradient(135deg,#e040a0,#a855f7); border:none; border-radius:12px; color:#fff; font-weight:800; cursor:pointer; }
+  .btn-secondary { width:100%; padding:12px 16px; background:transparent; border:1.5px solid rgba(255,255,255,0.12); border-radius:12px; color:var(--text-secondary); font-weight:700; cursor:pointer; }
+
+  /* Onboarding screens */
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* Forms */
+  .form-row { margin-bottom:12px; }
+  label { display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px; font-weight:700; }
+  input[type=text], input[type=email], input[type=password], select, textarea { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background:transparent; color:var(--text-primary); }
+  .helper { font-size:0.8rem; color:var(--text-secondary); margin-top:6px; }
+
+  /* Profile header */
+  .profile-bar { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+
+  /* Playlist section */
+  .song-card { border-radius:12px; padding:14px; border:1px solid rgba(255,255,255,0.06); margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); }
+
+  /* Compact / spacious preferences */
+  body.compact .emotion-card { padding:10px; }
+  body.spacious .emotion-card { padding:22px; }
+
+  @media (min-width:900px){
+    .app { grid-template-columns: 1fr 420px; }
+    .aside { display:block; }
+  }
+  .aside { display:none; }
+
+  .error { color:#ff6b6b; font-weight:700; font-size:0.86rem; }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- MAIN COLUMN -->
+  <div>
+    <div class="topbar">
+      <div class="logo">Harmoniq</div>
+      <div class="account-actions" id="accountActions">
+        <div class="pill" id="welcomePill">Welcome</div>
+        <button class="btn-secondary" id="openLoginBtn">Log in / Sign up</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 0: Login / Signup -->
+    <div class="card screen" id="screen0">
+      <div class="section-heading">Sign up or log in</div>
+      <div class="section-sub">Create an account so your preferences stick with you</div>
+
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <button class="btn-primary" id="showSignup">Create an account</button>
+        <button class="btn-secondary" id="showLogin">I already have an account</button>
+      </div>
+
+      <div id="authArea">
+        <!-- Signup form -->
+        <div id="signupForm">
+          <div class="form-row">
+            <label for="signupEmail">Email</label>
+            <input id="signupEmail" type="email" placeholder="you@example.com" />
+            <div class="helper">We accept addresses like blank@something.com (gmail, yahoo, school domains).</div>
+            <div class="error" id="emailError" style="display:none;"></div>
+          </div>
+          <div class="form-row">
+            <label for="signupPass">Password</label>
+            <input id="signupPass" type="password" placeholder="Create a password" />
+          </div>
+          <div class="form-row">
+            <label for="displayName">Display name</label>
+            <input id="displayName" type="text" placeholder="Your name shown in the app" />
+          </div>
+          <div class="form-row">
+            <label for="username">Username</label>
+            <input id="username" type="text" placeholder="unique username" />
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" id="createAccountBtn">Create account</button>
+            <button class="btn-secondary" id="cancelSignup">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Login form -->
+        <div id="loginForm" style="display:none;">
+          <div class="form-row">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" placeholder="you@example.com" />
+          </div>
+          <div class="form-row">
+            <label for="loginPass">Password</label>
+            <input id="loginPass" type="password" placeholder="Password" />
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" id="loginBtn">Log in</button>
+            <button class="btn-secondary" id="cancelLogin">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: Emotion Selection -->
+    <div class="card screen active" id="screen1">
+      <div class="profile-bar">
+        <div>
+          <div class="section-heading">How are you feeling right now?</div>
+          <div class="section-sub">Select up to 5 emotions that describe your current state</div>
+        </div>
+        <div style="min-width:220px;text-align:right;">
+          <div class="selection-counter" id="counter"><span id="countNum">0</span> of 5 emotions selected</div>
+        </div>
+      </div>
+
+      <div class="emotion-grid" id="emotionGrid">
+        <!-- A larger set of emotions to fill space -->
+        <div class="emotion-card" data-emotion="Happy"><span class="emotion-emoji">😊</span><div class="emotion-label">Happy</div></div>
+        <div class="emotion-card" data-emotion="Sad"><span class="emotion-emoji">😢</span><div class="emotion-label">Sad</div></div>
+        <div class="emotion-card" data-emotion="Energetic"><span class="emotion-emoji">⚡</span><div class="emotion-label">Energetic</div></div>
+        <div class="emotion-card" data-emotion="Calm"><span class="emotion-emoji">🌙</span><div class="emotion-label">Calm</div></div>
+        <div class="emotion-card" data-emotion="Anxious"><span class="emotion-emoji">😰</span><div class="emotion-label">Anxious</div></div>
+        <div class="emotion-card" data-emotion="Angry"><span class="emotion-emoji">😠</span><div class="emotion-label">Angry</div></div>
+        <div class="emotion-card" data-emotion="Romantic"><span class="emotion-emoji">💕</span><div class="emotion-label">Romantic</div></div>
+        <div class="emotion-card" data-emotion="Nostalgic"><span class="emotion-emoji">🌅</span><div class="emotion-label">Nostalgic</div></div>
+        <div class="emotion-card" data-emotion="Tired"><span class="emotion-emoji">😴</span><div class="emotion-label">Tired</div></div>
+        <div class="emotion-card" data-emotion="Motivated"><span class="emotion-emoji">💪</span><div class="emotion-label">Motivated</div></div>
+        <div class="emotion-card" data-emotion="Lonely"><span class="emotion-emoji">😔</span><div class="emotion-label">Lonely</div></div>
+        <div class="emotion-card" data-emotion="Confident"><span class="emotion-emoji">😎</span><div class="emotion-label">Confident</div></div>
+        <div class="emotion-card" data-emotion="Stressed"><span class="emotion-emoji">😤</span><div class="emotion-label">Stressed</div></div>
+        <div class="emotion-card" data-emotion="Excited"><span class="emotion-emoji">🤩</span><div class="emotion-label">Excited</div></div>
+        <div class="emotion-card" data-emotion="Hopeful"><span class="emotion-emoji">🌟</span><div class="emotion-label">Hopeful</div></div>
+        <div class="emotion-card" data-emotion="Playful"><span class="emotion-emoji">😜</span><div class="emotion-label">Playful</div></div>
+        <div class="emotion-card" data-emotion="Relaxed"><span class="emotion-emoji">😌</span><div class="emotion-label">Relaxed</div></div>
+        <div class="emotion-card" data-emotion="Bored"><span class="emotion-emoji">😐</span><div class="emotion-label">Bored</div></div>
+        <div class="emotion-card" data-emotion="Grateful"><span class="emotion-emoji">🙏</span><div class="emotion-label">Grateful</div></div>
+        <div class="emotion-card" data-emotion="Curious"><span class="emotion-emoji">🧐</span><div class="emotion-label">Curious</div></div>
+        <div class="emotion-card" data-emotion="Jealous"><span class="emotion-emoji">😒</span><div class="emotion-label">Jealous</div></div>
+        <div class="emotion-card" data-emotion="Peaceful"><span class="emotion-emoji">🕊️</span><div class="emotion-label">Peaceful</div></div>
+        <div class="emotion-card" data-emotion="Inspired"><span class="emotion-emoji">✨</span><div class="emotion-label">Inspired</div></div>
+      </div>
+
+      <div style="margin-top:18px;display:flex;gap:12px;">
+        <button class="btn-primary" id="confirmBtn" onclick="goToScreen2()" style="opacity:0.4;pointer-events:none;">Confirm My Emotions</button>
+        <button class="btn-secondary" id="savePrefsBtn" style="width:auto;">Save as Preference</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Destination Emotion -->
+    <div class="card screen" id="screen2">
+      <div class="section-heading">Where do you want to be?</div>
+      <div class="section-sub">Choose your destination emotion</div>
+
+      <div class="emotion-grid" id="destinationGrid">
+        <div class="emotion-card" data-dest="Happy" onclick="selectDestination(this,'Happy','😊')"><span class="emotion-emoji">😊</span><div class="emotion-label">Happy</div></div>
+        <div class="emotion-card" data-dest="Peaceful" onclick="selectDestination(this,'Peaceful','🕊️')"><span class="emotion-emoji">🕊️</span><div class="emotion-label">Peaceful</div></div>
+        <div class="emotion-card" data-dest="Energized" onclick="selectDestination(this,'Energized','⚡')"><span class="emotion-emoji">⚡</span><div class="emotion-label">Energized</div></div>
+        <div class="emotion-card" data-dest="Confident" onclick="selectDestination(this,'Confident','😎')"><span class="emotion-emoji">😎</span><div class="emotion-label">Confident</div></div>
+        <div class="emotion-card" data-dest="Focused" onclick="selectDestination(this,'Focused','🎯')"><span class="emotion-emoji">🎯</span><div class="emotion-label">Focused</div></div>
+        <div class="emotion-card" data-dest="Uplifted" onclick="selectDestination(this,'Uplifted','✨')"><span class="emotion-emoji">✨</span><div class="emotion-label">Uplifted</div></div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;">
+        <div class="toggle-row"><div class="toggle" id="shuffleToggle"></div><span class="toggle-label">🔀 Shuffle Playlist</span></div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;">
+        <button class="btn-primary" id="createBtn" onclick="goToScreen3()" style="opacity:0.4;pointer-events:none;">Create My Journey Playlist</button>
+        <button class="btn-secondary" onclick="goToScreen1()">← Back</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Playlist Result -->
+    <div class="card screen" id="screen3">
+      <div class="section-heading" id="journeyTitle"></div>
+      <div class="tag-pill" id="journeyPill" style="margin-bottom:12px;"></div>
+      <div id="playlistCards"></div>
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button class="btn-primary" onclick="openSpotify()">🎵 Open Full Playlist on Spotify</button>
+        <button class="btn-secondary" onclick="goToScreen1()">🔄 Start New Journey</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Personal Info (after signup) -->
+    <div class="card screen" id="screenProfile">
+      <div class="section-heading">Tell us about you</div>
+      <div class="section-sub">This helps personalize your experience</div>
+      <div class="form-row">
+        <label for="profileName">Full name</label>
+        <input id="profileName" type="text" />
+      </div>
+      <div class="form-row">
+        <label for="profileUsername">Public username</label>
+        <input id="profileUsername" type="text" />
+      </div>
+      <div class="form-row">
+        <label for="layoutPref">Layout preference</label>
+        <select id="layoutPref">
+          <option value="spacious">Spacious (bigger cards)</option>
+          <option value="compact">Compact (more on screen)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-primary" id="saveProfileBtn">Save profile</button>
+        <button class="btn-secondary" id="skipProfile">Skip</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ASIDE column for description / user preview -->
+  <div class="aside">
+    <div class="card">
+      <div style="font-weight:800;color:var(--pink-light);margin-bottom:8px;">Your current session</div>
+      <div id="sessionPreview" style="color:var(--text-secondary);">Not signed in</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // --- small client-side account & preference system (localStorage) ---
+  const selectedEmotions = new Set();
+  const LS_KEY = 'harmoniq_user';
+
+  function readUser(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ return null; } }
+  function writeUser(u){ localStorage.setItem(LS_KEY, JSON.stringify(u)); updateAccountUI(); }
+
+  function updateAccountUI(){
+    const user = readUser();
+    const welcome = document.getElementById('welcomePill');
+    const actions = document.getElementById('accountActions');
+    if(user){
+      welcome.textContent = user.displayName || user.email || 'You';
+      // show logout
+      if(!document.getElementById('logoutBtn')){
+        const btn = document.createElement('button'); btn.className='btn-secondary'; btn.id='logoutBtn'; btn.textContent='Logout'; btn.onclick=logout;
+        actions.appendChild(btn);
+      }
+      // apply saved layout preference
+      const pref = user.preferences && user.preferences.layout;
+      applyLayout(pref || 'spacious');
+      // show preview
+      const preview = document.getElementById('sessionPreview');
+      preview.textContent = `Signed in as ${user.displayName || user.email}`;
+    } else {
+      welcome.textContent = 'Welcome';
+      const lb = document.getElementById('logoutBtn'); if(lb) lb.remove();
+      applyLayout('spacious');
+      const preview = document.getElementById('sessionPreview'); preview.textContent = 'Not signed in';
+    }
+  }
+
+  function applyLayout(mode){ document.body.classList.remove('compact','spacious'); document.body.classList.add(mode||'spacious'); }
+
+  function logout(){ localStorage.removeItem(LS_KEY); updateAccountUI(); }
+
+  // basic email validation (requires @ and a dot after it)
+  function isValidEmail(e){ const rx = /^\S+@\S+\.\S+$/; return rx.test(e); }
+
+  // Show/hide auth screens
+  document.getElementById('openLoginBtn').addEventListener('click', ()=>{ showScreen('screen0'); });
+  document.getElementById('showSignup').addEventListener('click', ()=>{ document.getElementById('signupForm').style.display='block'; document.getElementById('loginForm').style.display='none'; });
+  document.getElementById('showLogin').addEventListener('click', ()=>{ document.getElementById('signupForm').style.display='none'; document.getElementById('loginForm').style.display='block'; });
+  document.getElementById('cancelSignup').addEventListener('click', ()=> showScreen('screen1'));
+  document.getElementById('cancelLogin').addEventListener('click', ()=> showScreen('screen1'));
+
+  document.getElementById('createAccountBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('signupEmail').value.trim();
+    const pass = document.getElementById('signupPass').value;
+    const displayName = document.getElementById('displayName').value.trim() || null;
+    const username = document.getElementById('username').value.trim() || null;
+    const emailError = document.getElementById('emailError');
+    if(!isValidEmail(email)){ emailError.style.display='block'; emailError.textContent='Please enter a valid email (must contain @ and a dot).'; return; }
+    emailError.style.display='none';
+    // Save user (insecure demo only) to localStorage
+    const user = { email, displayName, username, preferences: { layout: 'spacious' } };
+    writeUser(user);
+    // Go to profile step
+    document.getElementById('profileName').value = displayName || '';
+    document.getElementById('profileUsername').value = username || '';
+    showScreen('screenProfile');
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    if(!isValidEmail(email)){ alert('Enter valid email'); return; }
+    // naive login: if email matches saved user, log in
+    const user = readUser();
+    if(user && user.email === email){ updateAccountUI(); showScreen('screen1'); } else { alert('No account found for that email — create an account first.'); }
+  });
+
+  // Profile save
+  document.getElementById('saveProfileBtn').addEventListener('click', ()=>{
+    const user = readUser() || {};
+    user.displayName = document.getElementById('profileName').value.trim() || user.displayName;
+    user.username = document.getElementById('profileUsername').value.trim() || user.username;
+    user.preferences = user.preferences || {};
+    user.preferences.layout = document.getElementById('layoutPref').value || 'spacious';
+    writeUser(user);
+    showScreen('screen1');
+  });
+  document.getElementById('skipProfile').addEventListener('click', ()=> showScreen('screen1'));
+
+  // Save current selected emotions as preference for signed-in user
+  document.getElementById('savePrefsBtn').addEventListener('click', ()=>{
+    const user = readUser(); if(!user){ alert('Sign in first to save preferences.'); return; }
+    user.preferences = user.preferences || {};
+    user.preferences.lastSelected = [...selectedEmotions];
+    writeUser(user); alert('Preferences saved');
+  });
+
+  // Emotion selection logic
+  document.getElementById('emotionGrid').addEventListener('click', e=>{
+    const card = e.target.closest('.emotion-card'); if(!card) return;
+    const emotion = card.dataset.emotion;
+    if(card.classList.contains('selected')){ card.classList.remove('selected'); selectedEmotions.delete(emotion); }
+    else { if(selectedEmotions.size >= 5) { return; } card.classList.add('selected'); selectedEmotions.add(emotion); }
+    updateCounter();
+  });
+
+  function updateCounter(){ const n = selectedEmotions.size; document.getElementById('countNum').textContent = n; const btn = document.getElementById('confirmBtn'); if(n>=1){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; } else { btn.style.opacity='0.4'; btn.style.pointerEvents='none'; } }
+
+  function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+
+  // Destination selection
+  let destEmotion = null;
+  function selectDestination(card, emotion, emoji){ document.querySelectorAll('#destinationGrid .emotion-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected'); destEmotion = { name: emotion, emoji }; document.getElementById('createBtn').style.opacity='1'; document.getElementById('createBtn').style.pointerEvents='auto'; }
+
+  // songs map (kept and extended slightly)
+  const songMap = {
+    Happy: [{ title: 'Good as Hell', artist:'Lizzo', vibe:'Pure joy fuel' }, { title:'Happy', artist:'Pharrell Williams', vibe:'Unstoppable positivity' }],
+    Sad: [{ title:'Someone Like You', artist:'Adele', vibe:'Soul/pop heartbreak' }, { title:'The Night We Met', artist:'Lord Huron', vibe:'Aching nostalgia' }],
+    Anxious: [{ title:'Breathe (2 AM)', artist:'Anna Nalick', vibe:'Acknowledging the anxiety' }, { title:'Weightless', artist:'Marconi Union', vibe:'Scientifically proven to relax' }],
+    Calm: [{ title:'Holocene', artist:'Bon Iver', vibe:'Vast, peaceful stillness' }, { title:'Bloom', artist:'The Paper Kites', vibe:'Soft and tender' }],
+    Energetic: [{ title:'Levitating', artist:'Dua Lipa', vibe:'Pure kinetic energy' }, { title:"Can't Stop the Feeling", artist:'Justin Timberlake', vibe:'Irresistible groove' }],
+    Angry: [{ title:'Break Stuff', artist:'Limp Bizkit', vibe:'Cathartic release' }, { title:'Gives You Hell', artist:'The All-American Rejects', vibe:'Spiteful satisfaction' }],
+    Romantic: [{ title:'Perfect', artist:'Ed Sheeran', vibe:'Timeless devotion' }, { title:'At Last', artist:'Etta James', vibe:'Classic romance' }],
+    Nostalgic: [{ title:'1979', artist:'Smashing Pumpkins', vibe:'Bittersweet childhood echo' }, { title:'Vienna', artist:'Billy Joel', vibe:'Timeless wisdom' }],
+    Tired: [{ title:'Saturn', artist:'Stevie Wonder', vibe:'Gentle, restorative warmth' }, { title:'Sleep', artist:'Eric Whitacre', vibe:'Drifting into rest' }],
+    Motivated: [{ title:'Eye of the Tiger', artist:'Survivor', vibe:'Legendary drive' }, { title:'Lose Yourself', artist:'Eminem', vibe:'One shot intensity' }],
+    Lonely: [{ title:'Eleanor Rigby', artist:'The Beatles', vibe:'You are not alone in feeling alone' }, { title:'Skinny Love', artist:'Bon Iver', vibe:'Raw, honest solitude' }],
+    Confident: [{ title:'Run the World (Girls)', artist:'Beyoncé', vibe:'Commanding presence' }, { title:'Stronger', artist:'Kanye West', vibe:'Unshakeable self-belief' }],
+    Stressed: [{ title:'Sound of Silence', artist:'Simon & Garfunkel', vibe:'Retreat into calm' }, { title:'Fix You', artist:'Coldplay', vibe:'Gentle reassurance' }],
+    Excited: [{ title:'Good Vibrations', artist:'The Beach Boys', vibe:'Pure sunshine energy' }, { title:'Dancing Queen', artist:'ABBA', vibe:'Euphoric freedom' }],
+    Hopeful: [{ title:'Here Comes the Sun', artist:'The Beatles', vibe:'Dawn after darkness' }, { title:'Beautiful Day', artist:'U2', vibe:'Optimism in motion' }],
+    Inspired: [{ title:'Dog Days Are Over', artist:'Florence + The Machine', vibe:'Burst of inspiration' }]
+  };
+
+  function goToScreen2(){ const arr = [...selectedEmotions]; if(arr.length===0) return; const emojiMap = { Happy:'😊',Sad:'😢',Energetic:'⚡',Calm:'🌙',Anxious:'😰',Angry:'😠',Romantic:'💕',Nostalgic:'🌅',Tired:'😴',Motivated:'💪',Lonely:'😔',Confident:'😎',Stressed:'😤',Excited:'🤩',Hopeful:'🌟',Inspired:'✨' };
+    const html = arr.map((e,i)=>{ const sep = i < arr.length-1 ? '<span class="plus"> + </span>' : ''; return `<strong>${emojiMap[e] || ''} ${e}</strong>${sep}`; }).join('');
+    document.getElementById('journeyPill').innerHTML = '';
+    document.getElementById('currentFeelingDisplay')?.remove?.(); // safe
+    showScreen('screen2'); }
+
+  function goToScreen3(){ if(!destEmotion) return; const arr = [...selectedEmotions]; const titleEl = document.getElementById('journeyTitle'); titleEl.innerHTML = `Your Journey: ${arr.map(e => `<span style="color:var(--pink-light)">${e}</span>`).join(' <span style="color:var(--text-secondary)">+</span> ')} <span class="arrow">→</span> <span style="color:var(--purple)">${destEmotion.name}</span>`;
+    document.getElementById('journeyPill').innerHTML = `🎯 ${arr.join(' + ')} → ${destEmotion.name}`;
+    // generate songs
+    const allSongs = [];
+    arr.forEach(e=>{ if(songMap[e]) allSongs.push(...songMap[e]); });
+    if(songMap[destEmotion.name]) allSongs.push(...songMap[destEmotion.name]);
+    const seen = new Set(); const unique = allSongs.filter(s=>{ const k = s.title + '|' + s.artist; if(seen.has(k)) return false; seen.add(k); return true; });
+    const shuffled = unique.sort(()=>Math.random()-0.5).slice(0,6);
+    const container = document.getElementById('playlistCards'); container.innerHTML = shuffled.map(s=>`<div class="song-card"><div style="font-weight:800;color:var(--pink);">▶ ${s.title}</div><div style="color:var(--text-secondary);">${s.artist}</div><div style="color:var(--purple);font-style:italic">${s.vibe}</div></div>`).join('');
+    showScreen('screen3'); }
+
+  function openSpotify(){ window.open('https://open.spotify.com','_blank'); }
+
+  // initialize UI
+  updateAccountUI();
+
+  // small helper: if user had previously saved lastSelected preferences, restore them
+  (function restoreLastSelected(){ const user = readUser(); if(user && user.preferences && Array.isArray(user.preferences.lastSelected)){ const arr = user.preferences.lastSelected; arr.forEach(e=>{ const el = document.querySelector(`[data-emotion="${CSS.escape(e)}"]`); if(el){ el.classList.add('selected'); selectedEmotions.add(e); } }); updateCounter(); } })();
+
+</script>
+</body>
+</html>
