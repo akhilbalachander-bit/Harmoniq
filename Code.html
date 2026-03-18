@@ -31,16 +31,51 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 28px 24px 48px;
+    padding: 40px 20px 60px;
+  }
+
+  /* Container with ad spaces */
+  .app-container {
+    width: 100%;
+    max-width: 1600px;
+    display: grid;
+    grid-template-columns: 1fr 280px 1fr 280px 1fr;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  /* Ad spaces */
+  .ad-space {
+    background: linear-gradient(135deg, rgba(224,64,160,0.05), rgba(168,85,247,0.05));
+    border: 1.5px dashed rgba(224,64,160,0.2);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .ad-space:first-child {
+    grid-column: 1;
+  }
+
+  .ad-space:last-child {
+    grid-column: 5;
   }
 
   /* Make app wider to use more viewport */
   .app {
     width: 100%;
-    max-width: 920px; /* widened */
     display: grid;
     grid-template-columns: 1fr; /* could later be two-column */
     gap: 18px;
+    grid-column: 3;
   }
 
   /* Header area with account actions */
@@ -93,7 +128,7 @@
   .helper { font-size:0.8rem; color:var(--text-secondary); margin-top:6px; }
 
   /* Profile header */
-  .profile-bar { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+  .profile-bar { display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; justify-content:center; }
 
   /* Playlist section */
   .song-card { border-radius:12px; padding:14px; border:1px solid rgba(255,255,255,0.06); margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); }
@@ -106,6 +141,37 @@
     .app { grid-template-columns: 1fr 420px; }
     .aside { display:block; }
   }
+
+  @media (max-width: 1400px) {
+    .app-container {
+      grid-template-columns: 200px 1fr 200px;
+      gap: 28px;
+      max-width: 1000px;
+    }
+    .ad-space:first-child {
+      grid-column: 1;
+    }
+    .ad-space:last-child {
+      grid-column: 3;
+    }
+    .app {
+      grid-column: 2;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .app-container {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .ad-space {
+      display: none;
+    }
+    .app {
+      grid-column: 1;
+    }
+  }
+
   .aside { display:none; }
 
   .error { color:#ff6b6b; font-weight:700; font-size:0.86rem; }
@@ -113,7 +179,14 @@
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app-container">
+  <!-- LEFT AD SPACE -->
+  <div class="ad-space">
+    <div style="opacity: 0.7;">📢 Your Ad Here</div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="app">
 
   <!-- MAIN COLUMN -->
   <div>
@@ -183,11 +256,11 @@
     <!-- SCREEN 1: Emotion Selection -->
     <div class="card screen active" id="screen1">
       <div class="profile-bar">
-        <div>
+        <div style="width:100%;">
           <div class="section-heading">How are you feeling right now?</div>
           <div class="section-sub">Select up to 5 emotions that describe your current state</div>
         </div>
-        <div style="min-width:220px;text-align:right;">
+        <div style="width:100%;text-align:center;">
           <div class="selection-counter" id="counter"><span id="countNum">0</span> of 5 emotions selected</div>
         </div>
       </div>
@@ -227,8 +300,10 @@
 
     <!-- SCREEN 2: Destination Emotion -->
     <div class="card screen" id="screen2">
-      <div class="section-heading">Where do you want to be?</div>
-      <div class="section-sub">Choose your destination emotion</div>
+      <div style="text-align:center;margin-bottom:28px;">
+        <div class="section-heading">Where do you want to be?</div>
+        <div class="section-sub">Choose your destination emotion</div>
+      </div>
 
       <div class="emotion-grid" id="destinationGrid">
         <div class="emotion-card" data-dest="Happy" onclick="selectDestination(this,'Happy','😊')"><span class="emotion-emoji">😊</span><div class="emotion-label">Happy</div></div>
@@ -293,6 +368,11 @@
       <div style="font-weight:800;color:var(--pink-light);margin-bottom:8px;">Your current session</div>
       <div id="sessionPreview" style="color:var(--text-secondary);">Not signed in</div>
     </div>
+  </div>
+
+  <!-- RIGHT AD SPACE -->
+  <div class="ad-space">
+    <div style="opacity: 0.7;">📢 Your Ad Here</div>
   </div>
 
 </div>
@@ -412,19 +492,25 @@
     Sad: [{ title:'Someone Like You', artist:'Adele', vibe:'Soul/pop heartbreak' }, { title:'The Night We Met', artist:'Lord Huron', vibe:'Aching nostalgia' }],
     Anxious: [{ title:'Breathe (2 AM)', artist:'Anna Nalick', vibe:'Acknowledging the anxiety' }, { title:'Weightless', artist:'Marconi Union', vibe:'Scientifically proven to relax' }],
     Calm: [{ title:'Holocene', artist:'Bon Iver', vibe:'Vast, peaceful stillness' }, { title:'Bloom', artist:'The Paper Kites', vibe:'Soft and tender' }],
+    Peaceful: [{ title:'Music Box Dancer', artist:'Frank Mills', vibe:'Serene and tranquil' }, { title:'Clair de Lune', artist:'Debussy', vibe:'Pure tranquility' }],
     Energetic: [{ title:'Levitating', artist:'Dua Lipa', vibe:'Pure kinetic energy' }, { title:"Can't Stop the Feeling", artist:'Justin Timberlake', vibe:'Irresistible groove' }],
+    Energized: [{ title:'Blinding Lights', artist:'The Weeknd', vibe:'Electric momentum' }, { title:'Thunderstruck', artist:'AC/DC', vibe:'Pure adrenaline' }],
     Angry: [{ title:'Break Stuff', artist:'Limp Bizkit', vibe:'Cathartic release' }, { title:'Gives You Hell', artist:'The All-American Rejects', vibe:'Spiteful satisfaction' }],
     Romantic: [{ title:'Perfect', artist:'Ed Sheeran', vibe:'Timeless devotion' }, { title:'At Last', artist:'Etta James', vibe:'Classic romance' }],
     Nostalgic: [{ title:'1979', artist:'Smashing Pumpkins', vibe:'Bittersweet childhood echo' }, { title:'Vienna', artist:'Billy Joel', vibe:'Timeless wisdom' }],
     Tired: [{ title:'Saturn', artist:'Stevie Wonder', vibe:'Gentle, restorative warmth' }, { title:'Sleep', artist:'Eric Whitacre', vibe:'Drifting into rest' }],
     Motivated: [{ title:'Eye of the Tiger', artist:'Survivor', vibe:'Legendary drive' }, { title:'Lose Yourself', artist:'Eminem', vibe:'One shot intensity' }],
+    Focused: [{ title:'Deep Focus', artist:'Various', vibe:'Concentration zone' }, { title:'Brain Power', artist:'Various', vibe:'Laser-sharp focus' }],
     Lonely: [{ title:'Eleanor Rigby', artist:'The Beatles', vibe:'You are not alone in feeling alone' }, { title:'Skinny Love', artist:'Bon Iver', vibe:'Raw, honest solitude' }],
     Confident: [{ title:'Run the World (Girls)', artist:'Beyoncé', vibe:'Commanding presence' }, { title:'Stronger', artist:'Kanye West', vibe:'Unshakeable self-belief' }],
     Stressed: [{ title:'Sound of Silence', artist:'Simon & Garfunkel', vibe:'Retreat into calm' }, { title:'Fix You', artist:'Coldplay', vibe:'Gentle reassurance' }],
     Excited: [{ title:'Good Vibrations', artist:'The Beach Boys', vibe:'Pure sunshine energy' }, { title:'Dancing Queen', artist:'ABBA', vibe:'Euphoric freedom' }],
     Hopeful: [{ title:'Here Comes the Sun', artist:'The Beatles', vibe:'Dawn after darkness' }, { title:'Beautiful Day', artist:'U2', vibe:'Optimism in motion' }],
-    Inspired: [{ title:'Dog Days Are Over', artist:'Florence + The Machine', vibe:'Burst of inspiration' }]
+    Uplifted: [{ title:'Walking on Sunshine', artist:'Katrina & The Waves', vibe:'Soaring spirits' }, { title:'Good as Hell', artist:'Lizzo', vibe:'Radiant confidence' }],
+    Inspired: [{ title:'Dog Days Are Over', artist:'Florence + The Machine', vibe:'Burst of inspiration' }, { title:'The Sky is the Limit', artist:'Various', vibe:'Boundless possibilities' }]
   };
+
+  function goToScreen1(){ selectedEmotions.clear(); destEmotion = null; updateCounter(); document.getElementById('emotionGrid').querySelectorAll('.emotion-card').forEach(c => c.classList.remove('selected')); showScreen('screen1'); }
 
   function goToScreen2(){ const arr = [...selectedEmotions]; if(arr.length===0) return; const emojiMap = { Happy:'😊',Sad:'😢',Energetic:'⚡',Calm:'🌙',Anxious:'😰',Angry:'😠',Romantic:'💕',Nostalgic:'🌅',Tired:'😴',Motivated:'💪',Lonely:'😔',Confident:'😎',Stressed:'😤',Excited:'🤩',Hopeful:'🌟',Inspired:'✨' };
     const html = arr.map((e,i)=>{ const sep = i < arr.length-1 ? '<span class="plus"> + </span>' : ''; return `<strong>${emojiMap[e] || ''} ${e}</strong>${sep}`; }).join('');
