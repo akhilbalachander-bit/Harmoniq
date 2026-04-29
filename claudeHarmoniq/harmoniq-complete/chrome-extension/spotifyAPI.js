@@ -21,7 +21,7 @@ class SmartSpotify {
         }
 
         const extensionId = chrome.runtime.id;
-        this.redirectUri = `https://${extensionId}.chromiumapp.org/callback`;
+        this.redirectUri = `https://appdnaibcgibemilkmilgjljejajkibl.chromiumapp.org/callback`;
 
         const scope = [
             'playlist-modify-public',
