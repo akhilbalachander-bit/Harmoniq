@@ -271,7 +271,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 210px;
+    max-height: 200px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.2) transparent;
@@ -279,27 +279,37 @@ body {
 .track-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 8px;
+    gap: 7px;
+    padding: 5px 7px;
     background: var(--surface);
     border-radius: 8px;
     border-left: 3px solid transparent;
     transition: background 0.15s;
+    cursor: pointer;
 }
 .track-item:hover { background: rgba(255,255,255,0.12); }
 .track-item.liked { border-left-color: var(--accent); }
-.track-item.disliked { opacity: 0.45; }
+.track-item.disliked { opacity: 0.4; }
+
+/* Album art (Spotify tracks) */
+.track-art {
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
 .track-num {
     font-size: 0.65rem;
-    opacity: 0.5;
+    opacity: 0.45;
     width: 16px;
     text-align: right;
     flex-shrink: 0;
 }
 .track-info { flex: 1; min-width: 0; }
-.track-title { font-size: 0.78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.track-artist { font-size: 0.7rem; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.track-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.track-title  { font-size: 0.76rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-artist { font-size: 0.68rem; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-actions { display: flex; gap: 2px; flex-shrink: 0; align-items: center; }
 .track-action {
     background: none;
     border: none;
@@ -307,12 +317,78 @@ body {
     cursor: pointer;
     padding: 3px 4px;
     border-radius: 4px;
-    font-size: 0.8rem;
-    opacity: 0.5;
+    font-size: 0.78rem;
+    opacity: 0.45;
     transition: opacity 0.15s, background 0.15s;
 }
 .track-action:hover { opacity: 1; background: rgba(255,255,255,0.1); }
 .track-action.active { opacity: 1; }
+
+/* Preview play button */
+.track-play {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    color: var(--accent);
+    border: 1px solid rgba(29,185,84,0.35);
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+.track-play:hover { opacity: 1; background: rgba(29,185,84,0.12); }
+.track-play.playing { opacity: 1; background: rgba(29,185,84,0.18); }
+
+/* Source badge */
+.source-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.source-badge.live  { background: rgba(29,185,84,0.18); color: var(--accent); border: 1px solid rgba(29,185,84,0.3); }
+.source-badge.local { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+
+/* Spotify connect banner */
+.sp-connect-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(29,185,84,0.08);
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+.btn-sp-connect {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.btn-sp-connect:hover { opacity: 0.88; }
+
+/* Now-playing bar */
+.now-playing-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(29,185,84,0.12);
+    border: 1px solid rgba(29,185,84,0.3);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.74rem;
+}
+.np-icon { color: var(--accent); font-size: 0.7rem; flex-shrink: 0; }
+.np-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+.np-stop  { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; flex-shrink: 0; padding: 0 2px; }
+.np-stop:hover { color: var(--text); }
 
 /* ---- Result Actions ---- */
 .result-actions {

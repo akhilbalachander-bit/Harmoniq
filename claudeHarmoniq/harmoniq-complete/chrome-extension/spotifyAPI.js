@@ -16,6 +16,17 @@ class SmartSpotify {
         return `https://${chrome.runtime.id}.chromiumapp.org/callback`;
     }
 
+    // Load a cached token from storage without prompting the user.
+    // Returns true if a valid token was found.
+    async loadCachedToken() {
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry']);
+        if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
+            this.accessToken = stored.spotify_token;
+            return true;
+        }
+        return false;
+    }
+
     async authenticate() {
         const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry']);
         if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
@@ -185,6 +196,60 @@ class SmartSpotify {
             };
         } catch (err) {
             console.error('Spotify create failed:', err);
+            return { success: false, error: err.message };
+        }
+    }
+
+    // Fast path: songs already have Spotify URIs (from Recommendations API).
+    // Skips the search step entirely.
+    async createPlaylistFromUris(name, description, songs, onProgress) {
+        try {
+            onProgress?.({ percent: 10, message: 'Authenticating with Spotify...', stats: `0/${songs.length}` });
+            await this.authenticate();
+
+            const userId = await this.getUserId();
+            onProgress?.({ percent: 30, message: 'Creating playlist...', stats: `0/${songs.length}` });
+
+            const createRes = await this.fetchWithRetry(
+                `https://api.spotify.com/v1/users/${userId}/playlists`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description, public: false })
+                }
+            );
+            const playlist = await createRes.json();
+            if (!playlist.id) throw new Error('Playlist creation failed — check Spotify account permissions');
+
+            const uris = songs.map(s => s.uri).filter(Boolean);
+            onProgress?.({ percent: 70, message: 'Adding songs...', stats: `${uris.length}/${songs.length}` });
+
+            for (let i = 0; i < uris.length; i += 100) {
+                await this.fetchWithRetry(
+                    `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ uris: uris.slice(i, i + 100) })
+                    }
+                );
+            }
+
+            onProgress?.({ percent: 100, message: 'Done!', stats: `${uris.length}/${songs.length} added` });
+            return {
+                success: true,
+                playlistUrl: `https://open.spotify.com/playlist/${playlist.id}`,
+                tracksAdded: uris.length,
+                tracksTotal: songs.length
+            };
+        } catch (err) {
+            console.error('Spotify createFromUris failed:', err);
             return { success: false, error: err.message };
         }
     }
