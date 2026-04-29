@@ -329,12 +329,16 @@ async function loadSavedPlaylists() {
         const header = document.createElement('div');
         header.className = 'pl-card-header';
         header.innerHTML = `
-            <div>
+            <div class="pl-card-info">
                 <div class="pl-name">${pl.name}</div>
                 <div class="pl-meta">${pl.songCount || 0} songs &bull; ${pl.createdDate || ''}</div>
+                ${pl.journey ? `<div class="pl-journey">${pl.journey}</div>` : ''}
             </div>
-            <button class="pl-toggle">Show</button>
-            <button class="pl-del">Delete</button>`;
+            <div class="pl-card-btns">
+                <button class="pl-toggle">▾ Tracks</button>
+                <button class="pl-spotify-btn">🎵</button>
+                <button class="pl-del">✕</button>
+            </div>`;
 
         const tracksDiv = document.createElement('div');
         tracksDiv.className = 'pl-tracks hidden';
@@ -348,20 +352,44 @@ async function loadSavedPlaylists() {
                 (pl.songs || []).forEach((s, i) => {
                     const row = document.createElement('div');
                     row.className = 'pl-track-row';
-                    row.textContent = `${i + 1}. ${s.title} — ${s.artist}`;
+                    row.innerHTML = `<span class="pl-track-num">${i + 1}</span>${s.title} <span class="pl-track-artist">— ${s.artist}</span>`;
+                    row.addEventListener('click', () => {
+                        chrome.tabs.create({ url: `https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist}`)}` });
+                    });
                     tracksDiv.appendChild(row);
                 });
                 show(tracksDiv);
-                toggleBtn.textContent = 'Hide';
+                toggleBtn.textContent = '▴ Tracks';
             } else {
                 hide(tracksDiv);
-                toggleBtn.textContent = 'Show';
+                toggleBtn.textContent = '▾ Tracks';
+            }
+        });
+
+        header.querySelector('.pl-spotify-btn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!pl.songs?.length) { toast('No songs in this playlist'); return; }
+            const songs = pl.songs.map(s => ({ title: s.title, artist: s.artist }));
+            toast('Creating Spotify playlist...');
+            const result = await smartSpotify.createPlaylistPremium(
+                pl.name, 'Saved Harmoniq journey', songs, () => {}
+            );
+            if (result.success) {
+                toast(`Added to Spotify! ${result.tracksAdded}/${result.tracksTotal} songs`);
+                if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
+            } else {
+                try {
+                    await smartSpotify.copyToClipboard(songs);
+                    toast('Copied song list — paste into Spotify');
+                } catch {
+                    toast(`Spotify error: ${result.error}`);
+                }
             }
         });
 
         header.querySelector('.pl-del').addEventListener('click', async (e) => {
             e.stopPropagation();
-            await playlistStorage.delete(pl.id);
+            await playlistStorage.deletePlaylist(pl.id);
             await loadSavedPlaylists();
             toast('Playlist deleted');
         });

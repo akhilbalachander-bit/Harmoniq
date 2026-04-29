@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Harmoniq — Instructions</title>
+    <title>Harmoniq — How to Use</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -11,56 +11,51 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: white;
             min-height: 100vh;
-            padding: 2rem 1rem;
+            padding: 2rem 1rem 3rem;
         }
-        .page { max-width: 560px; margin: 0 auto; }
-        h1 { font-size: 1.6rem; text-align: center; margin-bottom: 0.3rem; }
-        .sub { text-align: center; opacity: 0.6; font-size: 0.9rem; margin-bottom: 2rem; }
-        .steps { display: flex; flex-direction: column; gap: 1rem; }
+        .page { max-width: 520px; margin: 0 auto; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; }
+        .sub { text-align: center; opacity: 0.55; font-size: 0.88rem; margin-bottom: 1.75rem; }
+
+        .steps { display: flex; flex-direction: column; gap: 12px; }
         .step {
-            display: flex;
-            gap: 1rem;
             background: rgba(255,255,255,0.07);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 14px;
-            padding: 1.1rem 1.25rem;
-            align-items: flex-start;
-        }
-        .num {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        .step-body h3 { font-size: 1rem; margin-bottom: 0.3rem; }
-        .step-body p { font-size: 0.875rem; opacity: 0.75; line-height: 1.5; }
-        .tip {
-            margin-top: 2rem;
-            background: rgba(102,126,234,0.15);
-            border: 1px solid rgba(102,126,234,0.3);
             border-radius: 12px;
-            padding: 1rem 1.25rem;
-            font-size: 0.875rem;
-            opacity: 0.85;
-            line-height: 1.6;
+            padding: 14px 16px;
         }
+        .step h3 {
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            color: #a5b4fc;
+        }
+        .step p {
+            font-size: 0.84rem;
+            opacity: 0.75;
+            line-height: 1.55;
+        }
+
+        .tip {
+            margin-top: 1.5rem;
+            background: rgba(102,126,234,0.12);
+            border: 1px solid rgba(102,126,234,0.28);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.84rem;
+            opacity: 0.85;
+            line-height: 1.55;
+        }
+
         .close-btn {
             display: block;
             width: 100%;
-            margin-top: 2rem;
-            padding: 0.9rem;
+            margin-top: 1.5rem;
+            padding: 0.85rem;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
         }
@@ -74,58 +69,37 @@
 
         <div class="steps">
             <div class="step">
-                <div class="num">1</div>
-                <div class="step-body">
-                    <h3>Pick your current mood</h3>
-                    <p>Select up to 3 emotions that describe how you feel right now. You can also filter by genre (Pop, Hip-Hop, Rock, etc.) to narrow the music style.</p>
-                </div>
+                <h3>1. Pick your current mood</h3>
+                <p>Select up to 3 emotions that describe how you feel right now. You can also filter by genre (Pop, Hip-Hop, Rock, etc.) to narrow the music style.</p>
             </div>
             <div class="step">
-                <div class="num">2</div>
-                <div class="step-body">
-                    <h3>Choose your destination</h3>
-                    <p>Select 1 or more emotions you want to feel after listening. Harmoniq will build a path between where you are and where you want to be.</p>
-                </div>
+                <h3>2. Choose your destination</h3>
+                <p>Select 1–3 emotions you want to feel after listening. Harmoniq builds a path between where you are and where you want to be.</p>
             </div>
             <div class="step">
-                <div class="num">3</div>
-                <div class="step-body">
-                    <h3>Generate your playlist</h3>
-                    <p>Tap Generate. A 20-song journey is created in three phases: validation (songs matching your current mood), transition, and destination.</p>
-                </div>
+                <h3>3. Generate your playlist</h3>
+                <p>Tap Generate. A 20-song journey is built in three phases: validation (your current mood), transition, then destination.</p>
             </div>
             <div class="step">
-                <div class="num">4</div>
-                <div class="step-body">
-                    <h3>React to songs</h3>
-                    <p>Use the thumbs-up, thumbs-down, and block buttons next to each track. Liked and blocked preferences are saved and influence future suggestions.</p>
-                </div>
+                <h3>4. React to songs</h3>
+                <p>Use thumbs-up to like, thumbs-down to dislike, or the block button to hide a song permanently. Preferences are saved and shape future playlists.</p>
             </div>
             <div class="step">
-                <div class="num">5</div>
-                <div class="step-body">
-                    <h3>Save your playlist</h3>
-                    <p>Give it a name and tap Save. Your playlist is stored locally (and in the cloud if you're signed in) and appears in the Playlists tab.</p>
-                </div>
+                <h3>5. Save your playlist</h3>
+                <p>Name it and tap Save. Your playlist is stored locally (and in the cloud if signed in) and appears in the Playlists tab.</p>
             </div>
             <div class="step">
-                <div class="num">6</div>
-                <div class="step-body">
-                    <h3>Create directly in Spotify</h3>
-                    <p>Tap the green Spotify button. If you have Spotify Premium, Harmoniq creates the playlist in your account automatically. If not, the song list is copied to your clipboard.</p>
-                </div>
+                <h3>6. Add to Spotify</h3>
+                <p>Tap the green Spotify button to create the playlist directly in your account. If that fails, the song list is copied to your clipboard instead.</p>
             </div>
             <div class="step">
-                <div class="num">7</div>
-                <div class="step-body">
-                    <h3>My Playlists</h3>
-                    <p>Open the Playlists tab to see all saved playlists. Tap Show Tracks to expand the track list, or Delete to remove a playlist.</p>
-                </div>
+                <h3>7. Manage saved playlists</h3>
+                <p>Open the Playlists tab to view saved playlists. Expand tracks, click any track to search on Spotify, or tap the Spotify button to push the whole playlist.</p>
             </div>
         </div>
 
         <div class="tip">
-            Tip: Sign in with Google (tap your profile icon at the top right) to sync playlists across devices and get cloud backup.
+            Tip: Sign in (top-right corner) with Google or email to sync playlists across devices and back them up to the cloud.
         </div>
 
         <button class="close-btn" onclick="window.close()">Close</button>
