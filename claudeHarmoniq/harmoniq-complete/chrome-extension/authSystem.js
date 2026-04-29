@@ -13,68 +13,53 @@ class AuthSystem {
         firebaseManager.auth.onAuthStateChanged((user) => {
             this.currentUser = user;
             this.notifyListeners(user);
-            if (user) { console.log('✅ User signed in:', user.email); }
-            else { console.log('ℹ️ User signed out'); }
         });
     }
 
     async signInWithGoogle() {
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await firebaseManager.auth.signInWithPopup(provider);
-            await this.saveUserProfile(result.user);
-            return result.user;
-        } catch (error) {
-            console.error('❌ Google sign-in failed:', error);
-            throw error;
-        }
+        // Opens auth.html as a full tab — signInWithPopup works there,
+        // unlike in the extension popup where Chrome blocks new windows.
+        return new Promise((resolve) => {
+            chrome.tabs.create({ url: chrome.runtime.getURL('auth.html') });
+            // Auth state change will fire via shared Firebase IndexedDB persistence.
+            const unsub = firebaseManager.auth.onAuthStateChanged((user) => {
+                if (user) {
+                    unsub();
+                    resolve(user);
+                }
+            });
+        });
     }
 
     async signUpWithEmail(email, password, displayName) {
-        try {
-            const result = await firebaseManager.auth.createUserWithEmailAndPassword(email, password);
-            await result.user.updateProfile({ displayName });
-            await this.saveUserProfile(result.user);
-            return result.user;
-        } catch (error) {
-            console.error('❌ Sign-up failed:', error);
-            throw error;
-        }
+        const result = await firebaseManager.auth.createUserWithEmailAndPassword(email, password);
+        await result.user.updateProfile({ displayName });
+        await this.saveUserProfile(result.user);
+        return result.user;
     }
 
     async signInWithEmail(email, password) {
-        try {
-            const result = await firebaseManager.auth.signInWithEmailAndPassword(email, password);
-            return result.user;
-        } catch (error) {
-            console.error('❌ Sign-in failed:', error);
-            throw error;
-        }
+        const result = await firebaseManager.auth.signInWithEmailAndPassword(email, password);
+        return result.user;
     }
 
     async signOut() {
-        try {
-            await firebaseManager.auth.signOut();
-            this.currentUser = null;
-        } catch (error) {
-            console.error('❌ Sign-out failed:', error);
-            throw error;
-        }
+        await firebaseManager.auth.signOut();
+        this.currentUser = null;
     }
 
     async saveUserProfile(user) {
-        const userRef = firebaseManager.db.collection('users').doc(user.uid);
-        await userRef.set({
+        const ref = firebaseManager.db.collection('users').doc(user.uid);
+        await ref.set({
             uid: user.uid,
             email: user.email,
             displayName: user.displayName || user.email.split('@')[0],
             photoURL: user.photoURL || null,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     }
 
-    onAuthStateChanged(callback) { this.authStateListeners.push(callback); }
+    onAuthStateChanged(cb) { this.authStateListeners.push(cb); }
     notifyListeners(user) { this.authStateListeners.forEach(cb => cb(user)); }
     isSignedIn() { return this.currentUser !== null; }
     getCurrentUser() { return this.currentUser; }

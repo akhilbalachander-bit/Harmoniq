@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Harmoniq",
-  "version": "4.2.0",
+  "version": "5.0.0",
   "description": "Emotional journey playlist generator with cloud sync",
   "action": {
     "default_popup": "popup-v2.html",
@@ -10,7 +10,9 @@
   "permissions": [
     "storage",
     "activeTab",
-    "tabs"
+    "tabs",
+    "identity",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://open.spotify.com/*",
@@ -27,7 +29,8 @@
     {
       "resources": [
         "setupWizard.html",
-        "instructions.html"
+        "instructions.html",
+        "auth.html"
       ],
       "matches": ["<all_urls>"]
     }
