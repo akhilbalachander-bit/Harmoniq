@@ -80,7 +80,7 @@
             <!-- Loading -->
             <div id="loading" class="center-col hidden">
                 <div class="spinner"></div>
-                <p class="muted">Creating your journey...</p>
+                <p class="muted" id="loadingMsg">Creating your journey...</p>
             </div>
 
             <!-- Spotify progress -->
@@ -96,13 +96,29 @@
                     <span id="journeyFrom" class="journey-emotions"></span>
                     <span class="journey-arrow">&#8594;</span>
                     <span id="journeyTo" class="journey-emotions"></span>
+                    <span id="playlistSourceBadge" class="source-badge local hidden"></span>
                 </div>
+
+                <!-- Spotify connect banner (shown when no Spotify token) -->
+                <div id="spotifyConnectBanner" class="sp-connect-banner hidden">
+                    <span>Connect Spotify for live recommendations</span>
+                    <button id="connectSpotifyBtn" class="btn-sp-connect">Connect</button>
+                </div>
+
                 <input id="playlistName" type="text" class="name-input" placeholder="Playlist name...">
                 <div class="filter-row">
                     <span class="filter-label">Genre:</span>
                     <div id="resultGenreChips" class="genre-chips small"></div>
                 </div>
                 <div id="trackList" class="track-list"></div>
+
+                <!-- Now-playing bar -->
+                <div id="nowPlayingBar" class="now-playing-bar hidden">
+                    <span class="np-icon">▶</span>
+                    <span id="nowPlayingTitle" class="np-title"></span>
+                    <button id="stopPreviewBtn" class="np-stop">■</button>
+                </div>
+
                 <div class="result-actions">
                     <button id="saveBtn" class="btn-primary">💾 Save</button>
                     <button id="createSpotifyBtn" class="btn-spotify">🎵 Add to Spotify</button>
@@ -220,6 +236,7 @@
 <script src="authSystem.js"></script>
 <script src="cloudStorage.js"></script>
 <script src="spotifyAPI.js"></script>
+<script src="spotifyRecommendations.js"></script>
 <script src="popup-v2.js"></script>
 </body>
 </html>

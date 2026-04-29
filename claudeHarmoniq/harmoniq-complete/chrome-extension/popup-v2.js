@@ -13,13 +13,54 @@ const GENRE_MAP = {
     'Classical':  ['classical', 'piano', 'orchestral']
 };
 
-let currentEmotions = [];
-let targetEmotions  = [];
-let currentPlaylist = [];
-let activeGenre     = 'All';
-let resultGenre     = 'All';
-let isSignUpMode    = false;
-let preferences     = { liked: {}, disliked: {}, blocked: {} }; // keyed by "title|artist"
+let currentEmotions  = [];
+let targetEmotions   = [];
+let currentPlaylist  = [];
+let activeGenre      = 'All';
+let resultGenre      = 'All';
+let isSignUpMode     = false;
+let preferences      = { liked: {}, disliked: {}, blocked: {} };
+let playlistFromSpotify = false; // true when current playlist came from Spotify Recommendations
+
+// ---- Audio player state ----
+let activeAudio     = null;
+let activeAudioKey  = null;
+
+function stopAudio() {
+    if (activeAudio) {
+        activeAudio.pause();
+        activeAudio.src = '';
+        activeAudio = null;
+    }
+    activeAudioKey = null;
+    const bar = $('nowPlayingBar');
+    if (bar) hide(bar);
+    document.querySelectorAll('.track-play.playing').forEach(b => {
+        b.textContent = '▶';
+        b.classList.remove('playing');
+    });
+}
+
+function playPreview(previewUrl, key, title, artist) {
+    if (activeAudioKey === key) { stopAudio(); return; }
+    stopAudio();
+    activeAudio = new Audio(previewUrl);
+    activeAudioKey = key;
+    activeAudio.volume = 0.7;
+    activeAudio.play().catch(() => {});
+    activeAudio.addEventListener('ended', stopAudio);
+
+    // Update play button
+    const btn = document.querySelector(`.track-play[data-key="${CSS.escape(key)}"]`);
+    if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
+
+    // Now-playing bar
+    const bar = $('nowPlayingBar');
+    if (bar) {
+        $('nowPlayingTitle').textContent = `${title} — ${artist}`;
+        show(bar);
+    }
+}
 
 // ---- Utility ----
 const $ = id => document.getElementById(id);
@@ -111,48 +152,56 @@ function renderTrackList(playlist) {
     const filtered = filterByGenre(playlist, resultGenre);
 
     filtered.forEach((song, i) => {
-        const key = trackKey(song);
+        const key      = trackKey(song);
         const liked    = !!preferences.liked[key];
         const disliked = !!preferences.disliked[key];
         const blocked  = !!preferences.blocked[key];
-
-        if (blocked) return; // skip blocked songs
+        if (blocked) return;
 
         const item = document.createElement('div');
         item.className = 'track-item' + (liked ? ' liked' : '') + (disliked ? ' disliked' : '');
 
+        const artHtml = song.albumArt
+            ? `<img class="track-art" src="${song.albumArt}" alt="" loading="lazy">`
+            : `<span class="track-num">${i + 1}</span>`;
+
+        const playHtml = song.previewUrl
+            ? `<button class="track-play track-action" data-key="${key}" title="Preview">▶</button>`
+            : '';
+
         item.innerHTML = `
-            <span class="track-num">${i + 1}</span>
+            ${artHtml}
             <div class="track-info">
                 <div class="track-title">${song.title}</div>
                 <div class="track-artist">${song.artist}</div>
             </div>
             <div class="track-actions">
-                <button class="track-action ${liked ? 'active' : ''}" data-act="like" title="Like">&#128077;</button>
-                <button class="track-action ${disliked ? 'active' : ''}" data-act="dislike" title="Dislike">&#128078;</button>
-                <button class="track-action" data-act="block" title="Don't recommend">&#128683;</button>
+                ${playHtml}
+                <button class="track-action ${liked ? 'active' : ''}" data-act="like" title="Like">👍</button>
+                <button class="track-action ${disliked ? 'active' : ''}" data-act="dislike" title="Dislike">👎</button>
+                <button class="track-action" data-act="block" title="Don't recommend">🚫</button>
             </div>`;
+
+        // Preview play button
+        if (song.previewUrl) {
+            item.querySelector('.track-play').addEventListener('click', (e) => {
+                e.stopPropagation();
+                playPreview(song.previewUrl, key, song.title, song.artist);
+            });
+        }
 
         item.querySelector('[data-act="like"]').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (liked) {
-                delete preferences.liked[key];
-            } else {
-                preferences.liked[key] = true;
-                delete preferences.disliked[key];
-            }
+            if (liked) { delete preferences.liked[key]; }
+            else { preferences.liked[key] = true; delete preferences.disliked[key]; }
             await savePrefs();
             renderTrackList(playlist);
         });
 
         item.querySelector('[data-act="dislike"]').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (disliked) {
-                delete preferences.disliked[key];
-            } else {
-                preferences.disliked[key] = true;
-                delete preferences.liked[key];
-            }
+            if (disliked) { delete preferences.disliked[key]; }
+            else { preferences.disliked[key] = true; delete preferences.liked[key]; }
             await savePrefs();
             renderTrackList(playlist);
         });
@@ -165,9 +214,12 @@ function renderTrackList(playlist) {
             toast('Song blocked — won\'t appear again');
         });
 
-        // Click track to search on Spotify
-        item.addEventListener('click', () => {
-            chrome.tabs.create({ url: `https://open.spotify.com/search/${encodeURIComponent(song.spotifyQuery || `${song.title} ${song.artist}`)}` });
+        // Click track body → open in Spotify
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.track-actions')) return;
+            const url = song.spotifyUrl
+                || `https://open.spotify.com/search/${encodeURIComponent(song.spotifyQuery || `${song.title} ${song.artist}`)}`;
+            chrome.tabs.create({ url });
         });
 
         container.appendChild(item);
@@ -195,11 +247,13 @@ $('backBtn').addEventListener('click', () => {
 });
 
 $('startOverBtn').addEventListener('click', () => {
+    stopAudio();
     hide($('step3'));
     show($('step1'));
     currentEmotions.length = 0;
     targetEmotions.length  = 0;
     activeGenre = 'All';
+    playlistFromSpotify = false;
     document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
     document.querySelectorAll('.genre-chip').forEach((c, i) => {
         c.classList.toggle('active', i === 0);
@@ -208,6 +262,14 @@ $('startOverBtn').addEventListener('click', () => {
     hide($('results'));
 });
 
+// ---- Spotify connect banner ----
+function updateSpotifyBanner() {
+    const banner = $('spotifyConnectBanner');
+    if (!banner) return;
+    const hasToken = smartSpotify.accessToken !== null;
+    hasToken ? hide(banner) : show(banner);
+}
+
 // ---- Generate ----
 $('generateBtn').addEventListener('click', async () => {
     hide($('step2'));
@@ -215,32 +277,63 @@ $('generateBtn').addEventListener('click', async () => {
     show($('loading'));
     hide($('results'));
     hide($('spProgress'));
+    stopAudio();
 
-    await new Promise(r => setTimeout(r, 300));
+    const loadMsg = $('loadingMsg');
 
-    // Build playlist then filter
-    const raw = buildJourneyPlaylist(currentEmotions, targetEmotions, false);
-    currentPlaylist = filterByGenre(raw, activeGenre);
-    if (currentPlaylist.length === 0) currentPlaylist = raw; // fallback
+    // Load cached Spotify token silently (no auth popup at this stage)
+    await smartSpotify.loadCachedToken().catch(() => {});
 
-    // Journey bar with emotion icons
+    const token = smartSpotify.accessToken;
+
+    // Try Spotify Recommendations first
+    let spotifyPlaylist = null;
+    if (token) {
+        if (loadMsg) loadMsg.textContent = 'Fetching songs for your current mood...';
+        spotifyPlaylist = await spotifyRec.buildJourney(
+            currentEmotions, targetEmotions, token,
+            (msg) => { if (loadMsg) loadMsg.textContent = msg; }
+        );
+    }
+
+    if (spotifyPlaylist && spotifyPlaylist.length > 0) {
+        currentPlaylist = spotifyPlaylist;
+        playlistFromSpotify = true;
+    } else {
+        // Fallback to local musicData.js
+        if (loadMsg) loadMsg.textContent = 'Building your journey...';
+        playlistFromSpotify = false;
+        const raw = buildJourneyPlaylist(currentEmotions, targetEmotions, false);
+        currentPlaylist = filterByGenre(raw, activeGenre);
+        if (currentPlaylist.length === 0) currentPlaylist = raw;
+    }
+
+    // Journey bar
     const fromEmos = currentEmotions.map(e => `<span class="journey-emo">${EMOTIONS[e].emoji}</span>`).join('');
     const toEmos   = targetEmotions.map(e => `<span class="journey-emo">${EMOTIONS[e].emoji}</span>`).join('');
     $('journeyFrom').innerHTML = fromEmos;
     $('journeyTo').innerHTML   = toEmos;
 
-    // Default playlist name
+    // Source badge
+    const badge = $('playlistSourceBadge');
+    if (badge) {
+        badge.textContent   = playlistFromSpotify ? '🎵 Live from Spotify' : '📚 Local library';
+        badge.className     = 'source-badge' + (playlistFromSpotify ? ' live' : ' local');
+    }
+
+    // Default name
     const fromLabel = currentEmotions.map(e => EMOTIONS[e].label).join('+');
     const toLabel   = targetEmotions.map(e => EMOTIONS[e].label).join('+');
     $('playlistName').value = `${fromLabel} → ${toLabel}`;
 
-    // Result genre chips
+    // Result genre chips (only useful for local playlists)
     resultGenre = 'All';
     buildGenreChips('resultGenreChips', (g) => {
         resultGenre = g;
         renderTrackList(currentPlaylist);
     });
 
+    updateSpotifyBanner();
     hide($('loading'));
     show($('results'));
     renderTrackList(currentPlaylist);
@@ -265,40 +358,65 @@ $('saveBtn').addEventListener('click', async () => {
 // ---- Create in Spotify ----
 $('createSpotifyBtn').addEventListener('click', async () => {
     if (!currentPlaylist.length) return;
+    stopAudio();
 
     const name = $('playlistName').value.trim() || 'Harmoniq Journey';
-    const desc = `Emotional journey playlist by Harmoniq`;
-    const songs = currentPlaylist.map(s => ({ title: s.title, artist: s.artist }));
+    const desc = 'Emotional journey playlist by Harmoniq';
 
     hide($('results'));
     show($('spProgress'));
     $('spFill').style.width = '0%';
-    $('spMsg').textContent = 'Starting...';
-    $('spStats').textContent = `0/${songs.length}`;
+    $('spMsg').textContent  = 'Starting...';
+    $('spStats').textContent = `0/${currentPlaylist.length}`;
 
-    const result = await smartSpotify.createPlaylistPremium(name, desc, songs, (p) => {
-        $('spFill').style.width = `${p.percent}%`;
-        $('spMsg').textContent = p.message;
-        $('spStats').textContent = p.stats;
-    });
+    let result;
+
+    // If playlist came from Spotify Recommendations we already have URIs — skip search
+    if (playlistFromSpotify && currentPlaylist.every(s => s.uri)) {
+        result = await smartSpotify.createPlaylistFromUris(name, desc, currentPlaylist, (p) => {
+            $('spFill').style.width  = `${p.percent}%`;
+            $('spMsg').textContent   = p.message;
+            $('spStats').textContent = p.stats;
+        });
+    } else {
+        const songs = currentPlaylist.map(s => ({ title: s.title, artist: s.artist }));
+        result = await smartSpotify.createPlaylistPremium(name, desc, songs, (p) => {
+            $('spFill').style.width  = `${p.percent}%`;
+            $('spMsg').textContent   = p.message;
+            $('spStats').textContent = p.stats;
+        });
+    }
 
     hide($('spProgress'));
     show($('results'));
 
     if (result.success) {
         toast(`Created in Spotify! ${result.tracksAdded}/${result.tracksTotal} songs added`);
-        if (result.playlistUrl) {
-            chrome.tabs.create({ url: result.playlistUrl });
-        }
+        if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
     } else {
-        // Fallback: copy to clipboard
         try {
-            await smartSpotify.copyToClipboard(songs);
+            await smartSpotify.copyToClipboard(currentPlaylist.map(s => ({ title: s.title, artist: s.artist })));
             toast('Could not create directly — song list copied to clipboard');
         } catch {
             toast(`Spotify error: ${result.error}`);
         }
     }
+});
+
+// ---- Connect Spotify banner ----
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'connectSpotifyBtn') {
+        toast('Connecting to Spotify...');
+        smartSpotify.authenticate().then(() => {
+            toast('Spotify connected! Regenerate for live recommendations.');
+            updateSpotifyBanner();
+        }).catch(() => toast('Spotify connection failed'));
+    }
+});
+
+// ---- Stop preview button ----
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'stopPreviewBtn') stopAudio();
 });
 
 // ---- Bottom Nav ----
