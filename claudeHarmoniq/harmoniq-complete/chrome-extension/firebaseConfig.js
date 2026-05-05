@@ -14,6 +14,17 @@ const firebaseConfig = {
   measurementId: "G-THRY9KP1EE"
 };
 
+// Allowed origins for website and chrome extension
+const ALLOWED_ORIGINS = [
+    'https://akhilbalachander-bit.github.io',
+    'chrome-extension://YOUR_EXTENSION_ID_HERE' // Replace with actual extension ID from chrome://extensions
+];
+
+function isAllowedOrigin() {
+    const origin = window.location.origin;
+    return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+}
+
 class FirebaseManager {
     constructor() {
         this.initialized = false;
@@ -23,6 +34,10 @@ class FirebaseManager {
 
     async init() {
         if (this.initialized) return;
+        if (!isAllowedOrigin()) {
+            console.error('❌ Firebase blocked: origin not whitelisted:', window.location.origin);
+            return false;
+        }
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
