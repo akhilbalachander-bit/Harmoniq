@@ -1,6 +1,6 @@
 // ============================================
 // SPOTIFY API - Direct Playlist Creation
-// Uses chrome.identity OAuth (Implicit Grant)
+// Uses chrome.identity OAuth (Authorization Code + PKCE)
 // Requires redirect URI in Spotify Developer Dashboard:
 //   https://<YOUR-EXTENSION-ID>.chromiumapp.org/callback
 // Find your extension ID at chrome://extensions
@@ -17,54 +17,128 @@ class SmartSpotify {
     }
 
     // Load a cached token from storage without prompting the user.
-    // Returns true if a valid token was found.
+    // Returns true if a valid token was found (or was refreshed).
     async loadCachedToken() {
-        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry']);
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
         if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
             this.accessToken = stored.spotify_token;
             return true;
+        }
+        if (stored.spotify_refresh_token) {
+            try {
+                await this._refreshToken(stored.spotify_refresh_token);
+                return true;
+            } catch { /* fall through */ }
         }
         return false;
     }
 
     async authenticate() {
-        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry']);
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+
         if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
             this.accessToken = stored.spotify_token;
             return;
         }
 
-        const scope = [
-            'playlist-modify-public',
-            'playlist-modify-private',
-            'user-read-private'
-        ].join('%20');
+        if (stored.spotify_refresh_token) {
+            try {
+                await this._refreshToken(stored.spotify_refresh_token);
+                return;
+            } catch { /* fall through to full auth */ }
+        }
 
-        const authUrl =
-            `https://accounts.spotify.com/authorize` +
-            `?client_id=${this.clientId}` +
-            `&response_type=token` +
-            `&redirect_uri=${encodeURIComponent(this.redirectUri)}` +
-            `&scope=${scope}`;
+        // PKCE flow
+        const codeVerifier = this._generateCodeVerifier();
+        const codeChallenge = await this._generateCodeChallenge(codeVerifier);
+
+        const authUrl = new URL('https://accounts.spotify.com/authorize');
+        authUrl.searchParams.set('client_id', this.clientId);
+        authUrl.searchParams.set('response_type', 'code');
+        authUrl.searchParams.set('redirect_uri', this.redirectUri);
+        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private user-read-private');
+        authUrl.searchParams.set('code_challenge_method', 'S256');
+        authUrl.searchParams.set('code_challenge', codeChallenge);
 
         return new Promise((resolve, reject) => {
-            chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (responseUrl) => {
+            chrome.identity.launchWebAuthFlow({ url: authUrl.toString(), interactive: true }, async (responseUrl) => {
                 if (chrome.runtime.lastError || !responseUrl) {
                     return reject(new Error(
-                        `Spotify auth failed. Add https://${chrome.runtime.id}.chromiumapp.org/callback` +
-                        ' as a redirect URI in your Spotify Developer Dashboard.'
+                        `Spotify auth failed. Make sure ${this.redirectUri} is added as a redirect URI in your Spotify Developer Dashboard.`
                     ));
                 }
-                const hash = new URL(responseUrl).hash.substring(1);
-                const params = new URLSearchParams(hash);
-                this.accessToken = params.get('access_token');
-                const expiresIn = parseInt(params.get('expires_in')) || 3600;
-                chrome.storage.local.set({
-                    spotify_token: this.accessToken,
-                    spotify_token_expiry: Date.now() + (expiresIn * 1000)
-                });
-                resolve();
+                const url = new URL(responseUrl);
+                const code = url.searchParams.get('code');
+                const error = url.searchParams.get('error');
+                if (error || !code) {
+                    return reject(new Error(`Spotify auth denied: ${error || 'no code returned'}`));
+                }
+                try {
+                    await this._exchangeCode(code, codeVerifier);
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
             });
+        });
+    }
+
+    _generateCodeVerifier() {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return btoa(String.fromCharCode(...array))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    async _generateCodeChallenge(verifier) {
+        const data = new TextEncoder().encode(verifier);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return btoa(String.fromCharCode(...new Uint8Array(digest)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    async _exchangeCode(code, codeVerifier) {
+        const res = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: this.redirectUri,
+                client_id: this.clientId,
+                code_verifier: codeVerifier
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(`Spotify token exchange failed: ${err.error_description || res.status}`);
+        }
+        const data = await res.json();
+        this.accessToken = data.access_token;
+        await chrome.storage.local.set({
+            spotify_token: data.access_token,
+            spotify_token_expiry: Date.now() + (data.expires_in * 1000),
+            spotify_refresh_token: data.refresh_token
+        });
+    }
+
+    async _refreshToken(refreshToken) {
+        const res = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken,
+                client_id: this.clientId
+            })
+        });
+        if (!res.ok) throw new Error('Token refresh failed');
+        const data = await res.json();
+        this.accessToken = data.access_token;
+        await chrome.storage.local.set({
+            spotify_token: data.access_token,
+            spotify_token_expiry: Date.now() + (data.expires_in * 1000),
+            ...(data.refresh_token ? { spotify_refresh_token: data.refresh_token } : {})
         });
     }
 
@@ -165,13 +239,12 @@ class SmartSpotify {
                 const pct = 35 + Math.round((done / songs.length) * 50);
                 onProgress?.({ percent: pct, message: 'Finding songs...', stats: `${uris.length}/${songs.length} found` });
                 if (i + BATCH < songs.length) {
-                    await new Promise(r => setTimeout(r, 200)); // small delay between batches
+                    await new Promise(r => setTimeout(r, 200));
                 }
             }
 
             if (uris.length > 0) {
                 onProgress?.({ percent: 87, message: 'Adding songs to playlist...', stats: `${uris.length}/${songs.length}` });
-                // Spotify max 100 URIs per request
                 for (let i = 0; i < uris.length; i += 100) {
                     await this.fetchWithRetry(
                         `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
@@ -201,7 +274,6 @@ class SmartSpotify {
     }
 
     // Fast path: songs already have Spotify URIs (from Recommendations API).
-    // Skips the search step entirely.
     async createPlaylistFromUris(name, description, songs, onProgress) {
         try {
             onProgress?.({ percent: 10, message: 'Authenticating with Spotify...', stats: `0/${songs.length}` });
