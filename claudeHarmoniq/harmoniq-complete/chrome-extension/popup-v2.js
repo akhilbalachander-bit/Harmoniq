@@ -567,7 +567,10 @@ $('emailAuthBtn').addEventListener('click', async () => {
             'auth/user-not-found': 'No account with that email.',
             'auth/email-already-in-use': 'Email already in use.',
             'auth/weak-password': 'Password must be 6+ characters.',
-            'auth/invalid-email': 'Invalid email address.'
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/operation-not-allowed': 'Email/password sign-in is not enabled. Please use Google sign-in.',
+            'auth/too-many-requests': 'Too many attempts. Please try again later.',
+            'auth/network-request-failed': 'Network error. Check your connection.'
         };
         errEl.textContent = msgs[err.code] || err.message;
     }
