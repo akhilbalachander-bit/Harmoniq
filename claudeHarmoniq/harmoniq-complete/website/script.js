@@ -16,15 +16,17 @@ const mobileMenu = document.getElementById('mobileMenu');
 const navLinks = document.getElementById('navLinks');
 if (mobileMenu) {
     mobileMenu.addEventListener('click', () => {
-        navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
-        navLinks.style.flexDirection = 'column';
-        navLinks.style.position = 'absolute';
-        navLinks.style.top = '100%';
-        navLinks.style.left = '0';
-        navLinks.style.right = '0';
-        navLinks.style.background = 'rgba(15,15,26,.95)';
-        navLinks.style.padding = '1rem 2rem';
-        navLinks.style.borderRadius = '0 0 15px 15px';
+        const isOpen = navLinks.classList.toggle('open');
+        mobileMenu.classList.toggle('open', isOpen);
+        mobileMenu.setAttribute('aria-expanded', isOpen);
+    });
+    // Close menu when a nav link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('open');
+            mobileMenu.classList.remove('open');
+            mobileMenu.setAttribute('aria-expanded', false);
+        });
     });
 }
 

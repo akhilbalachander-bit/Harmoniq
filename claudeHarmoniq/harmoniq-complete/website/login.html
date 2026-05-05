@@ -35,7 +35,7 @@
             border-radius: 20px;
             padding: 2.5rem 2rem;
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
             backdrop-filter: blur(20px);
         }
         .card-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 0.3rem; }
@@ -54,10 +54,11 @@
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.2s;
             font-family: inherit;
         }
-        .btn-google:hover { opacity: 0.9; }
+        .btn-google:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-google:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .divider {
             display: flex;
             align-items: center;
@@ -78,6 +79,7 @@
             gap: 6px;
             margin-bottom: 1rem;
         }
+        .field.hidden { display: none; }
         .field label { font-size: 0.82rem; opacity: 0.75; }
         .field input {
             padding: 0.75rem 0.9rem;
@@ -91,6 +93,7 @@
         }
         .field input:focus { outline: none; border-color: #667eea; }
         .field input::placeholder { color: rgba(255,255,255,0.35); }
+        .field input.input-error { border-color: #FC8181; }
         .btn-primary {
             width: 100%;
             padding: 0.85rem;
@@ -102,10 +105,11 @@
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.2s;
             margin-top: 0.25rem;
         }
-        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .toggle-row {
             text-align: center;
             margin-top: 1.25rem;
@@ -120,6 +124,20 @@
             font-size: inherit;
             font-weight: 600;
         }
+        .forgot-link {
+            display: block;
+            text-align: right;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            color: #667eea;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+        }
+        .forgot-link:hover { text-decoration: underline; }
         .error-msg {
             background: rgba(252,129,129,0.15);
             border: 1px solid rgba(252,129,129,0.3);
@@ -142,18 +160,35 @@
         }
         #signedInView { display: none; text-align: center; }
         .user-avatar {
-            width: 64px; height: 64px;
+            width: 72px; height: 72px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
             margin: 0 auto 1rem;
         }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
         .user-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; }
         .user-email-text { font-size: 0.85rem; opacity: 0.6; margin-bottom: 1.5rem; }
+        .welcome-badge {
+            display: inline-block;
+            background: rgba(104,211,145,0.15);
+            border: 1px solid rgba(104,211,145,0.3);
+            color: #68D391;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            margin-bottom: 1.5rem;
+        }
         .btn-outline {
             width: 100%;
             padding: 0.75rem;
@@ -166,6 +201,7 @@
             cursor: pointer;
             font-family: inherit;
             margin-bottom: 0.75rem;
+            transition: background 0.2s;
         }
         .btn-outline:hover { background: rgba(255,255,255,0.08); }
         .back-link {
@@ -177,15 +213,28 @@
             text-decoration: none;
         }
         .back-link:hover { color: white; }
+        .password-strength {
+            height: 3px;
+            border-radius: 2px;
+            margin-top: 6px;
+            background: rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        .password-strength-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s, background 0.3s;
+            width: 0%;
+        }
     </style>
 </head>
 <body>
     <a class="nav-logo" href="index.html">&#127925; Harmoniq</a>
 
     <div class="card">
-        <!-- Sign-in form -->
+        <!-- Auth form -->
         <div id="authView">
-            <h1 class="card-title">Welcome back</h1>
+            <h1 class="card-title" id="cardTitle">Welcome back</h1>
             <p class="card-sub" id="cardSub">Sign in to sync your playlists</p>
 
             <button class="btn-google" id="googleBtn">
@@ -195,7 +244,7 @@
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Continue with Google
+                <span id="googleBtnText">Continue with Google</span>
             </button>
 
             <div class="divider">or</div>
@@ -203,13 +252,32 @@
             <div id="errorMsg" class="error-msg"></div>
             <div id="successMsg" class="success-msg"></div>
 
+            <!-- Name field: sign-up only -->
+            <div class="field hidden" id="nameField">
+                <label for="nameInput">Full Name</label>
+                <input type="text" id="nameInput" placeholder="Your name" autocomplete="name">
+            </div>
+
             <div class="field">
                 <label for="emailInput">Email</label>
                 <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
             </div>
-            <div class="field">
+
+            <div class="field" id="passwordField">
                 <label for="passwordInput">Password</label>
                 <input type="password" id="passwordInput" placeholder="Your password" autocomplete="current-password">
+                <div class="password-strength hidden" id="strengthBar">
+                    <div class="password-strength-bar" id="strengthFill"></div>
+                </div>
+            </div>
+
+            <!-- Forgot password: sign-in only -->
+            <button class="forgot-link" id="forgotLink">Forgot password?</button>
+
+            <!-- Confirm password: sign-up only -->
+            <div class="field hidden" id="confirmField">
+                <label for="confirmInput">Confirm Password</label>
+                <input type="password" id="confirmInput" placeholder="Repeat your password" autocomplete="new-password">
             </div>
 
             <button class="btn-primary" id="emailAuthBtn">Sign In</button>
@@ -223,10 +291,11 @@
         <!-- Signed-in state -->
         <div id="signedInView">
             <div class="user-avatar" id="userAvatarWeb">U</div>
+            <div class="welcome-badge">&#10003; Signed in</div>
             <div class="user-name" id="userNameWeb"></div>
             <div class="user-email-text" id="userEmailWeb"></div>
+            <a class="btn-primary" href="index.html" style="display:block;text-align:center;text-decoration:none;padding:0.85rem;margin-bottom:0.75rem;">Go to Harmoniq</a>
             <button class="btn-outline" id="signOutBtn">Sign Out</button>
-            <a class="btn-primary" href="index.html" style="display:block;text-align:center;text-decoration:none;padding:0.85rem;">Back to Home</a>
         </div>
     </div>
 
@@ -237,7 +306,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script>
-        // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyBJoNEbVdX9N0ncY9c6wkyJjWcCEttIUqM",
             authDomain: "harmoniq-5d985.firebaseapp.com",
@@ -252,16 +320,39 @@
 
         let isSignUp = false;
 
-        const authView      = document.getElementById('authView');
-        const signedInView  = document.getElementById('signedInView');
-        const errorMsg      = document.getElementById('errorMsg');
-        const successMsg    = document.getElementById('successMsg');
-        const emailInput    = document.getElementById('emailInput');
-        const passwordInput = document.getElementById('passwordInput');
-        const emailAuthBtn  = document.getElementById('emailAuthBtn');
-        const toggleMode    = document.getElementById('toggleMode');
-        const toggleText    = document.getElementById('toggleText');
-        const cardSub       = document.getElementById('cardSub');
+        const authView       = document.getElementById('authView');
+        const signedInView   = document.getElementById('signedInView');
+        const errorMsg       = document.getElementById('errorMsg');
+        const successMsg     = document.getElementById('successMsg');
+        const nameInput      = document.getElementById('nameInput');
+        const nameField      = document.getElementById('nameField');
+        const emailInput     = document.getElementById('emailInput');
+        const passwordInput  = document.getElementById('passwordInput');
+        const confirmInput   = document.getElementById('confirmInput');
+        const confirmField   = document.getElementById('confirmField');
+        const strengthBar    = document.getElementById('strengthBar');
+        const strengthFill   = document.getElementById('strengthFill');
+        const emailAuthBtn   = document.getElementById('emailAuthBtn');
+        const toggleMode     = document.getElementById('toggleMode');
+        const toggleText     = document.getElementById('toggleText');
+        const cardTitle      = document.getElementById('cardTitle');
+        const cardSub        = document.getElementById('cardSub');
+        const forgotLink     = document.getElementById('forgotLink');
+        const googleBtn      = document.getElementById('googleBtn');
+        const googleBtnText  = document.getElementById('googleBtnText');
+
+        const ERROR_MSGS = {
+            'auth/wrong-password':        'Incorrect password. Try again or reset it.',
+            'auth/invalid-credential':    'Incorrect email or password. Try again.',
+            'auth/user-not-found':        'No account found with that email.',
+            'auth/email-already-in-use':  'An account with this email already exists.',
+            'auth/weak-password':         'Password must be at least 6 characters.',
+            'auth/invalid-email':         'Please enter a valid email address.',
+            'auth/popup-closed-by-user':  'Sign-in cancelled.',
+            'auth/popup-blocked':         'Popup blocked — please allow popups for this site.',
+            'auth/too-many-requests':     'Too many attempts. Please wait a moment and try again.',
+            'auth/network-request-failed':'Network error. Please check your connection.'
+        };
 
         function showError(msg) {
             errorMsg.textContent = msg;
@@ -278,88 +369,178 @@
             successMsg.style.display = 'none';
         }
 
+        function setLoading(loading) {
+            emailAuthBtn.disabled = loading;
+            googleBtn.disabled    = loading;
+            emailAuthBtn.textContent = loading
+                ? (isSignUp ? 'Creating account…' : 'Signing in…')
+                : (isSignUp ? 'Create Account' : 'Sign In');
+            googleBtnText.textContent = loading ? 'Please wait…' : 'Continue with Google';
+        }
+
+        function getPasswordStrength(pass) {
+            let score = 0;
+            if (pass.length >= 6)  score++;
+            if (pass.length >= 10) score++;
+            if (/[A-Z]/.test(pass)) score++;
+            if (/[0-9]/.test(pass)) score++;
+            if (/[^A-Za-z0-9]/.test(pass)) score++;
+            return score;
+        }
+
+        passwordInput.addEventListener('input', () => {
+            if (!isSignUp) return;
+            const val = passwordInput.value;
+            const score = getPasswordStrength(val);
+            const colors = ['#FC8181','#FC8181','#F6AD55','#68D391','#48BB78'];
+            const widths  = ['20%','40%','60%','80%','100%'];
+            strengthFill.style.width      = val ? widths[score - 1] || '10%' : '0%';
+            strengthFill.style.background = val ? colors[score - 1] || '#FC8181' : 'transparent';
+        });
+
+        // Check if page opened in sign-up mode via query param
+        if (new URLSearchParams(location.search).get('mode') === 'signup') {
+            switchToSignUp();
+        }
+
+        function switchToSignUp() {
+            isSignUp = true;
+            cardTitle.textContent     = 'Create Account';
+            cardSub.textContent       = 'Join Harmoniq — it\'s free';
+            emailAuthBtn.textContent  = 'Create Account';
+            toggleMode.textContent    = 'Sign In';
+            toggleText.textContent    = 'Already have an account?';
+            nameField.classList.remove('hidden');
+            confirmField.classList.remove('hidden');
+            strengthBar.classList.remove('hidden');
+            forgotLink.style.display  = 'none';
+            passwordInput.setAttribute('autocomplete', 'new-password');
+            passwordInput.setAttribute('placeholder', 'Create a password');
+        }
+
+        function switchToSignIn() {
+            isSignUp = false;
+            cardTitle.textContent     = 'Welcome back';
+            cardSub.textContent       = 'Sign in to sync your playlists';
+            emailAuthBtn.textContent  = 'Sign In';
+            toggleMode.textContent    = 'Sign Up';
+            toggleText.textContent    = "Don't have an account?";
+            nameField.classList.add('hidden');
+            confirmField.classList.add('hidden');
+            strengthBar.classList.add('hidden');
+            forgotLink.style.display  = '';
+            passwordInput.setAttribute('autocomplete', 'current-password');
+            passwordInput.setAttribute('placeholder', 'Your password');
+            strengthFill.style.width = '0%';
+        }
+
         toggleMode.addEventListener('click', () => {
-            isSignUp = !isSignUp;
             clearMsgs();
-            if (isSignUp) {
-                emailAuthBtn.textContent = 'Create Account';
-                toggleMode.textContent = 'Sign In';
-                toggleText.textContent = 'Already have an account?';
-                cardSub.textContent = 'Create your Harmoniq account';
-            } else {
-                emailAuthBtn.textContent = 'Sign In';
-                toggleMode.textContent = 'Sign Up';
-                toggleText.textContent = "Don't have an account?";
-                cardSub.textContent = 'Sign in to sync your playlists';
+            isSignUp ? switchToSignIn() : switchToSignUp();
+        });
+
+        forgotLink.addEventListener('click', async () => {
+            clearMsgs();
+            const email = emailInput.value.trim();
+            if (!email) {
+                showError('Enter your email address above, then click Forgot password.');
+                emailInput.focus();
+                return;
+            }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset email sent! Check your inbox.');
+            } catch (err) {
+                showError(ERROR_MSGS[err.code] || err.message);
             }
         });
 
-        document.getElementById('googleBtn').addEventListener('click', async () => {
+        googleBtn.addEventListener('click', async () => {
             clearMsgs();
+            setLoading(true);
             try {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 await auth.signInWithPopup(provider);
             } catch (err) {
-                const msgs = {
-                    'auth/popup-closed-by-user': 'Sign-in cancelled.',
-                    'auth/popup-blocked': 'Popup blocked — please allow popups for this site.'
-                };
-                showError(msgs[err.code] || err.message);
+                showError(ERROR_MSGS[err.code] || err.message);
+                setLoading(false);
             }
         });
 
         emailAuthBtn.addEventListener('click', async () => {
             clearMsgs();
-            const email = emailInput.value.trim();
-            const pass  = passwordInput.value;
+            const name    = nameInput.value.trim();
+            const email   = emailInput.value.trim();
+            const pass    = passwordInput.value;
+            const confirm = confirmInput.value;
+
             if (!email || !pass) { showError('Please enter your email and password.'); return; }
+
+            if (isSignUp) {
+                if (!name)            { showError('Please enter your name.'); nameInput.focus(); return; }
+                if (pass.length < 6)  { showError('Password must be at least 6 characters.'); return; }
+                if (pass !== confirm) {
+                    showError('Passwords do not match.');
+                    confirmInput.classList.add('input-error');
+                    confirmInput.focus();
+                    return;
+                }
+            }
+
+            confirmInput.classList.remove('input-error');
+            setLoading(true);
             try {
                 if (isSignUp) {
-                    await auth.createUserWithEmailAndPassword(email, pass);
-                    showSuccess('Account created!');
+                    const { user } = await auth.createUserWithEmailAndPassword(email, pass);
+                    await user.updateProfile({ displayName: name });
+                    await user.reload();
                 } else {
                     await auth.signInWithEmailAndPassword(email, pass);
                 }
             } catch (err) {
-                const msgs = {
-                    'auth/wrong-password': 'Incorrect password.',
-                    'auth/user-not-found': 'No account found with that email.',
-                    'auth/email-already-in-use': 'An account with this email already exists.',
-                    'auth/weak-password': 'Password must be at least 6 characters.',
-                    'auth/invalid-email': 'Please enter a valid email address.'
-                };
-                showError(msgs[err.code] || err.message);
+                showError(ERROR_MSGS[err.code] || err.message);
+                setLoading(false);
             }
         });
 
-        // Allow Enter key to submit
-        [emailInput, passwordInput].forEach(el => {
+        // Enter key submits from any field
+        [nameInput, emailInput, passwordInput, confirmInput].forEach(el => {
             el.addEventListener('keydown', e => { if (e.key === 'Enter') emailAuthBtn.click(); });
         });
 
         document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
 
-        // Auth state
         auth.onAuthStateChanged(async (user) => {
+            setLoading(false);
             if (user) {
-                authView.style.display = 'none';
-                signedInView.style.display = 'block';
-                const initials = (user.displayName || user.email || 'U')[0].toUpperCase();
-                document.getElementById('userAvatarWeb').textContent = initials;
-                document.getElementById('userNameWeb').textContent = user.displayName || user.email.split('@')[0];
-                document.getElementById('userEmailWeb').textContent = user.email;
-                // Save profile
+                authView.style.display      = 'none';
+                signedInView.style.display  = 'block';
+
+                const displayName = user.displayName || user.email.split('@')[0];
+                const initials    = displayName[0].toUpperCase();
+                const avatarEl    = document.getElementById('userAvatarWeb');
+
+                if (user.photoURL) {
+                    avatarEl.innerHTML = `<img src="${user.photoURL}" alt="${displayName}">`;
+                } else {
+                    avatarEl.textContent = initials;
+                }
+
+                document.getElementById('userNameWeb').textContent   = displayName;
+                document.getElementById('userEmailWeb').textContent  = user.email;
+
                 try {
                     await db.collection('users').doc(user.uid).set({
-                        uid: user.uid,
-                        email: user.email,
-                        displayName: user.displayName || user.email.split('@')[0],
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                        uid:         user.uid,
+                        email:       user.email,
+                        displayName: displayName,
+                        photoURL:    user.photoURL || null,
+                        lastLogin:   firebase.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
                 } catch (_) {}
             } else {
-                authView.style.display = 'block';
-                signedInView.style.display = 'none';
+                authView.style.display      = 'block';
+                signedInView.style.display  = 'none';
             }
         });
     </script>
