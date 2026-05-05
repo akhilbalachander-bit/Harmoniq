@@ -17,7 +17,7 @@ const firebaseConfig = {
 // Allowed origins for website and chrome extension
 const ALLOWED_ORIGINS = [
     'https://akhilbalachander-bit.github.io',
-    'chrome-extension://appdnaibcgibemilkmilgjljejajkibl'
+    'chrome-extension://'
 ];
 
 function isAllowedOrigin() {
