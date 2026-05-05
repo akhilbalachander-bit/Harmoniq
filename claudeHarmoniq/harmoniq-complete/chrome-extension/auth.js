@@ -10,6 +10,9 @@ async function waitForFirebase() {
         await new Promise(r => setTimeout(r, 100));
         attempts++;
     }
+    if (!window.firebaseManager?.initialized) {
+        throw new Error('Firebase failed to initialize. Check that this extension origin is allowed.');
+    }
 }
 
 googleBtn.addEventListener('click', async () => {
