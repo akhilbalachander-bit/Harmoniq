@@ -3,6 +3,11 @@
 
 const GOOGLE_CLIENT_ID = '520405889569-k0bnth8c66l2ovgkig6kgm0fnb341a3g.apps.googleusercontent.com';
 
+// This redirect URI must be registered in Google Cloud Console → Credentials → OAuth client → Authorized redirect URIs
+// Extension ID is fixed via the manifest "key" field.
+const REDIRECT_URI = chrome.identity.getRedirectURL();
+console.log('[Harmoniq auth] redirect URI (add this to GCP OAuth client):', REDIRECT_URI);
+
 const statusEl = document.getElementById('status');
 const googleBtn = document.getElementById('googleBtn');
 
