@@ -22,13 +22,17 @@ async function waitForFirebase() {
     }
 }
 
+// Log the redirect URI so it's easy to find in DevTools (chrome://extensions → Inspect views: background page or auth.html)
+console.log('[Harmoniq] OAuth redirect URI:', chrome.identity.getRedirectURL());
+
 googleBtn.addEventListener('click', async () => {
     googleBtn.disabled = true;
     statusEl.textContent = 'Opening Google sign-in...';
     statusEl.className = '';
 
     try {
-        const redirectUrl = REDIRECT_URI;
+        const redirectUrl = chrome.identity.getRedirectURL();
+        console.log('[Harmoniq] Using redirect URI:', redirectUrl);
         const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
@@ -80,7 +84,8 @@ googleBtn.addEventListener('click', async () => {
         googleBtn.disabled = false;
         let msg = err.message;
         if (err.message.includes('redirect_uri_mismatch')) {
-            msg = 'OAuth not configured for this extension. Add the chromiumapp.org redirect URI to your Google Cloud Console OAuth client.';
+            const uri = chrome.identity.getRedirectURL();
+            msg = `OAuth redirect URI not registered. Add this to Google Cloud Console → OAuth client → Authorized redirect URIs: ${uri}`;
         } else if (/cancel|closed|denied/i.test(err.message)) {
             msg = 'Sign-in cancelled.';
         } else if (err.code === 'auth/network-request-failed') {
