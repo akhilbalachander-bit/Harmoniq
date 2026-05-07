@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvErCHhLe0KDFvFjBMn0ccMC9hkcFx1YwnJuyiqfa1JpVBoLYrzBxxE5ifKUiN5U8Dm/AxpwWduHbIzKEpQgvyW3N6dSzBx8GrKjdnnuvEfSZADadt3cHdo0Szy/vkN6xXOZPAYrMBrTZzSOKDNDebsPHfChhL+lcDYkN3u4iOXDtx0olUyL3PvRDneyUUfYHo3fcpf60R2tv/bNnVn4msHq7X/kf+jUtfc901H3ZSwCTMQqHOGS0hGvLmnzl2b3AknRpdfGN5950IttXL5YiQatideqiEifmXnq5pnxN6egrXMzOEaUP+fM7OKhVwRT4DJmaFz2iOjPGbaLcEcWuaQIDAQAB",
   "name": "Harmoniq",
   "version": "5.0.0",
   "description": "Emotional journey playlist generator with cloud sync",
