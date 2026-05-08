@@ -36,6 +36,16 @@
                         Connect Spotify
                     </button>
                     <p class="sp-hint-text">Connect Spotify to get live song recommendations</p>
+                    <details class="sp-setup">
+                        <summary class="sp-setup-toggle">First time? Setup guide</summary>
+                        <div class="sp-setup-body">
+                            <p class="sp-setup-text">Add this redirect URI in your <strong>Spotify Developer Dashboard</strong> → Edit Settings → Redirect URIs:</p>
+                            <div class="sp-uri-row">
+                                <span class="sp-redirect-uri" id="redirectUriDisplayOut">Loading...</span>
+                                <button class="sp-copy-uri-btn" data-target="redirectUriDisplayOut">Copy</button>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -61,6 +71,16 @@
                         Connect Spotify
                     </button>
                     <p class="sp-hint-text">Connect Spotify to get live song recommendations</p>
+                    <details class="sp-setup">
+                        <summary class="sp-setup-toggle">First time? Setup guide</summary>
+                        <div class="sp-setup-body">
+                            <p class="sp-setup-text">Add this redirect URI in your <strong>Spotify Developer Dashboard</strong> → Edit Settings → Redirect URIs:</p>
+                            <div class="sp-uri-row">
+                                <span class="sp-redirect-uri" id="redirectUriDisplayIn">Loading...</span>
+                                <button class="sp-copy-uri-btn" data-target="redirectUriDisplayIn">Copy</button>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
             <button id="signOutBtn" class="btn-secondary w100">Sign Out</button>
