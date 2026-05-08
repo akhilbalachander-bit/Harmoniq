@@ -667,6 +667,65 @@ body {
 }
 .sp-disconnect-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.4); }
 
+/* ---- Spotify setup guide ---- */
+.sp-setup {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.74rem;
+}
+.sp-setup-toggle {
+    padding: 6px 10px;
+    cursor: pointer;
+    opacity: 0.6;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    user-select: none;
+}
+.sp-setup-toggle:hover { opacity: 0.9; background: rgba(255,255,255,0.04); }
+.sp-setup-toggle::before { content: '▸'; font-size: 0.65rem; }
+details[open] .sp-setup-toggle::before { content: '▾'; }
+.sp-setup-body {
+    padding: 6px 10px 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.sp-setup-text { opacity: 0.65; line-height: 1.45; }
+.sp-setup-text strong { opacity: 1; color: var(--text); }
+.sp-uri-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+.sp-redirect-uri {
+    flex: 1;
+    font-size: 0.65rem;
+    font-family: monospace;
+    word-break: break-all;
+    opacity: 0.8;
+    line-height: 1.3;
+}
+.sp-copy-uri-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.65rem;
+    padding: 3px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.sp-copy-uri-btn:hover { background: rgba(255,255,255,0.15); }
+
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

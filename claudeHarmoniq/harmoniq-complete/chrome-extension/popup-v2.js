@@ -293,8 +293,16 @@ async function connectSpotify() {
         toast('Spotify connected! Songs will now come live from Spotify.');
         updateSpotifyModalStatus();
         updateSpotifyBanner();
-    } catch {
-        toast('Spotify connection failed. Try again.');
+    } catch (err) {
+        console.error('Spotify connect error:', err);
+        const msg = err?.message || '';
+        if (msg.includes('redirect') || msg.includes('INVALID_CLIENT') || msg.includes('redirect_uri')) {
+            toast('Spotify: redirect URI not registered. Open the setup guide in the modal.', 5000);
+        } else if (msg.includes('cancel') || msg.includes('closed') || msg.includes('user_denied') || msg.includes('access_denied')) {
+            toast('Spotify sign-in cancelled.');
+        } else {
+            toast(`Spotify error: ${msg || 'auth failed. Check setup guide.'}`, 5000);
+        }
     }
 }
 
@@ -604,9 +612,29 @@ $('signOutBtn').addEventListener('click', async () => {
     toast('Signed out');
 });
 
+// ---- Spotify redirect URI display + copy ----
+function populateRedirectUriDisplays() {
+    const uri = smartSpotify.redirectUri;
+    ['redirectUriDisplayOut', 'redirectUriDisplayIn'].forEach(id => {
+        const el = $(id);
+        if (el) el.textContent = uri;
+    });
+}
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sp-copy-uri-btn');
+    if (!btn) return;
+    const targetId = btn.dataset.target;
+    const text = $(targetId)?.textContent;
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => toast('Redirect URI copied!')).catch(() => {});
+    }
+});
+
 // ---- Init ----
 (async () => {
     await loadPrefs();
+    populateRedirectUriDisplays();
     // Silently restore a cached Spotify token so modal shows correct status immediately
     await smartSpotify.loadCachedToken().catch(() => {});
     updateSpotifyModalStatus();
