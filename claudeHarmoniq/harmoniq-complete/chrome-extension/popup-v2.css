@@ -600,6 +600,73 @@ body {
 .user-email { font-size: 0.82rem; font-weight: 600; word-break: break-all; }
 .user-label { font-size: 0.7rem; opacity: 0.55; }
 
+/* ---- Auth modal: Spotify section ---- */
+.modal-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+}
+.spotify-modal-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.btn-spotify-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-spotify-modal:hover { opacity: 0.88; }
+.sp-hint-text {
+    font-size: 0.72rem;
+    opacity: 0.5;
+    text-align: center;
+    margin: 0;
+}
+.spotify-connected-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(29,185,84,0.1);
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+.sp-connected-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.sp-connected-label {
+    flex: 1;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+.sp-disconnect-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.sp-disconnect-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.4); }
+
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

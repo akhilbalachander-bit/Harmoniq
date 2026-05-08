@@ -269,6 +269,43 @@ function updateSpotifyBanner() {
     hasToken ? hide(banner) : show(banner);
 }
 
+// ---- Spotify modal status ----
+function updateSpotifyModalStatus() {
+    const hasToken = !!smartSpotify.accessToken;
+
+    // Signed-in panel
+    const connected    = $('spotifyModalConnected');
+    const disconnected = $('spotifyModalDisconnected');
+    if (connected)    hasToken ? show(connected)    : hide(connected);
+    if (disconnected) hasToken ? hide(disconnected) : show(disconnected);
+
+    // Signed-out panel
+    const connectedOut    = $('spotifyConnectedSignedOut');
+    const disconnectedOut = $('spotifyDisconnectedSignedOut');
+    if (connectedOut)    hasToken ? show(connectedOut)    : hide(connectedOut);
+    if (disconnectedOut) hasToken ? hide(disconnectedOut) : show(disconnectedOut);
+}
+
+async function connectSpotify() {
+    toast('Connecting to Spotify...');
+    try {
+        await smartSpotify.authenticate();
+        toast('Spotify connected! Songs will now come live from Spotify.');
+        updateSpotifyModalStatus();
+        updateSpotifyBanner();
+    } catch {
+        toast('Spotify connection failed. Try again.');
+    }
+}
+
+async function disconnectSpotify() {
+    await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+    smartSpotify.accessToken = null;
+    updateSpotifyModalStatus();
+    updateSpotifyBanner();
+    toast('Spotify disconnected');
+}
+
 // ---- Generate ----
 $('generateBtn').addEventListener('click', async () => {
     hide($('step2'));
@@ -402,14 +439,16 @@ $('createSpotifyBtn').addEventListener('click', async () => {
     }
 });
 
-// ---- Connect Spotify banner ----
+// ---- Spotify connect / disconnect (banner + modal buttons) ----
 document.addEventListener('click', (e) => {
-    if (e.target.id === 'connectSpotifyBtn') {
-        toast('Connecting to Spotify...');
-        smartSpotify.authenticate().then(() => {
-            toast('Spotify connected! Regenerate for live recommendations.');
-            updateSpotifyBanner();
-        }).catch(() => toast('Spotify connection failed'));
+    const id = e.target.closest('button')?.id;
+    if (id === 'connectSpotifyBtn' ||
+        id === 'modalConnectSpotifyBtn' ||
+        id === 'connectSpotifyBtnSignedOut') {
+        connectSpotify();
+    }
+    if (id === 'disconnectSpotifyBtn' || id === 'disconnectSpotifyBtnSignedOut') {
+        disconnectSpotify();
     }
 });
 
@@ -556,6 +595,7 @@ authSystem.onAuthStateChanged((user) => {
         show($('authSignedOut'));
         hide($('authSignedIn'));
     }
+    updateSpotifyModalStatus();
 });
 
 $('signOutBtn').addEventListener('click', async () => {
@@ -567,6 +607,10 @@ $('signOutBtn').addEventListener('click', async () => {
 // ---- Init ----
 (async () => {
     await loadPrefs();
+    // Silently restore a cached Spotify token so modal shows correct status immediately
+    await smartSpotify.loadCachedToken().catch(() => {});
+    updateSpotifyModalStatus();
+    updateSpotifyBanner();
 })();
 
 window.showNotification = toast;

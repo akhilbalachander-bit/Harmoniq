@@ -1,144 +1,124 @@
 // ============================================
-// SPOTIFY RECOMMENDATIONS
-// Maps emotions to Spotify audio features and
-// fetches a 3-phase journey playlist live from
-// the Spotify Recommendations API.
-//
-// Falls back gracefully if the API is unavailable
-// (returns null so caller can use musicData.js).
+// SPOTIFY RECOMMENDATIONS (Search-based)
+// Uses Spotify Search API — works for all apps
+// without quota extensions (replaces the
+// deprecated /v1/recommendations endpoint).
+// Falls back gracefully if unavailable.
 // ============================================
 
-// Spotify audio feature targets per emotion
-// valence 0–1 (sad→happy), energy 0–1 (slow→intense),
-// danceability 0–1, acousticness 0–1, tempo BPM
-const EMOTION_FEATURES = {
-    happy:     { valence: 0.85, energy: 0.75, danceability: 0.75, acousticness: 0.15, tempo: 120, genres: ['pop', 'dance', 'indie-pop'] },
-    sad:       { valence: 0.10, energy: 0.25, danceability: 0.30, acousticness: 0.60, tempo: 76,  genres: ['indie', 'folk', 'singer-songwriter'] },
-    energetic: { valence: 0.70, energy: 0.95, danceability: 0.85, acousticness: 0.05, tempo: 140, genres: ['edm', 'dance', 'pop'] },
-    calm:      { valence: 0.55, energy: 0.20, danceability: 0.30, acousticness: 0.75, tempo: 80,  genres: ['ambient', 'acoustic', 'chill'] },
-    anxious:   { valence: 0.20, energy: 0.70, danceability: 0.40, acousticness: 0.20, tempo: 125, genres: ['alternative', 'indie', 'rock'] },
-    angry:     { valence: 0.10, energy: 0.90, danceability: 0.50, acousticness: 0.05, tempo: 145, genres: ['metal', 'rock', 'punk'] },
-    romantic:  { valence: 0.80, energy: 0.40, danceability: 0.55, acousticness: 0.45, tempo: 96,  genres: ['pop', 'r-n-b', 'soul'] },
-    nostalgic: { valence: 0.65, energy: 0.45, danceability: 0.45, acousticness: 0.40, tempo: 100, genres: ['rock', 'pop', 'soul'] },
-    tired:     { valence: 0.30, energy: 0.15, danceability: 0.20, acousticness: 0.80, tempo: 66,  genres: ['ambient', 'acoustic', 'sleep'] },
-    motivated: { valence: 0.80, energy: 0.85, danceability: 0.75, acousticness: 0.10, tempo: 130, genres: ['hip-hop', 'pop', 'dance'] },
-    lonely:    { valence: 0.15, energy: 0.25, danceability: 0.25, acousticness: 0.65, tempo: 72,  genres: ['indie', 'folk', 'singer-songwriter'] },
-    confident: { valence: 0.85, energy: 0.80, danceability: 0.80, acousticness: 0.10, tempo: 125, genres: ['hip-hop', 'pop', 'r-n-b'] },
-    stressed:  { valence: 0.20, energy: 0.65, danceability: 0.35, acousticness: 0.30, tempo: 115, genres: ['acoustic', 'indie', 'alternative'] },
-    excited:   { valence: 0.90, energy: 0.90, danceability: 0.85, acousticness: 0.05, tempo: 140, genres: ['dance', 'edm', 'pop'] },
-    hopeful:   { valence: 0.75, energy: 0.55, danceability: 0.55, acousticness: 0.35, tempo: 105, genres: ['pop', 'indie-pop', 'soul'] },
+// Emotion → curated search queries for Spotify Search API.
+// Multiple queries per emotion give variety across the 3 phases.
+const EMOTION_QUERIES = {
+    happy:     ['happy feel good pop', 'upbeat joyful hits', 'sunshine indie pop', 'cheerful uplifting'],
+    sad:       ['sad heartbreak ballad', 'melancholy indie songs', 'emotional tearjerker', 'sorrow acoustic folk'],
+    energetic: ['high energy workout anthems', 'pump up edm bangers', 'intense cardio music', 'hype rap'],
+    calm:      ['calm relaxing acoustic', 'peaceful ambient chill', 'serene lo-fi beats', 'gentle instrumental'],
+    anxious:   ['tense anxious alternative', 'nervous energy indie rock', 'uneasy synth pop', 'restless music'],
+    angry:     ['angry aggressive rock', 'rage metal', 'furious hip-hop', 'cathartic punk hardcore'],
+    romantic:  ['romantic love songs', 'sensual r&b slow jams', 'tender love ballad', 'sweet soul romance'],
+    nostalgic: ['nostalgic throwback hits', 'classic 80s pop', 'retro soul throwback', 'vintage rock classics'],
+    tired:     ['sleepy ambient music', 'tired acoustic songs', 'dreamy lo-fi', 'soft bedtime lullaby'],
+    motivated: ['motivational rap hustle', 'empowering pop hits', 'workout inspiration', 'achievement hip-hop'],
+    lonely:    ['lonely indie folk', 'alone at night acoustic', 'isolation music', 'solitary introspective'],
+    confident: ['confident swagger rap', 'boss energy hip-hop', 'powerful pop anthem', 'self-assured r&b'],
+    stressed:  ['stress relief acoustic', 'calming tension music', 'unwinding indie chill', 'gentle de-stress'],
+    excited:   ['excited celebration pop', 'euphoric dance anthems', 'party energy edm', 'thrilling upbeat'],
+    hopeful:   ['hopeful uplifting indie', 'optimistic pop songs', 'bright future inspiration', 'inspired soul'],
 };
-
-function avgFeatures(emotionKeys) {
-    const feats = emotionKeys.map(k => EMOTION_FEATURES[k]).filter(Boolean);
-    if (!feats.length) return EMOTION_FEATURES.hopeful;
-    const n = feats.length;
-    return {
-        valence:      feats.reduce((s, f) => s + f.valence,      0) / n,
-        energy:       feats.reduce((s, f) => s + f.energy,       0) / n,
-        danceability: feats.reduce((s, f) => s + f.danceability, 0) / n,
-        acousticness: feats.reduce((s, f) => s + f.acousticness, 0) / n,
-        tempo:        feats.reduce((s, f) => s + f.tempo,        0) / n,
-        genres:       feats[0].genres,
-    };
-}
-
-function blendFeatures(a, b, t) {
-    const lerp = (x, y) => x + (y - x) * t;
-    return {
-        valence:      lerp(a.valence,      b.valence),
-        energy:       lerp(a.energy,       b.energy),
-        danceability: lerp(a.danceability, b.danceability),
-        acousticness: lerp(a.acousticness, b.acousticness),
-        tempo:        lerp(a.tempo,        b.tempo),
-        genres:       t < 0.5 ? a.genres : b.genres,
-    };
-}
 
 class SpotifyRecommendations {
 
-    async fetchPhase(features, limit, token) {
-        const seeds = features.genres.slice(0, 2).join(',');
-        const params = new URLSearchParams({
-            limit: String(limit),
-            seed_genres:          seeds,
-            target_valence:       features.valence.toFixed(3),
-            target_energy:        features.energy.toFixed(3),
-            target_danceability:  features.danceability.toFixed(3),
-            target_acousticness:  features.acousticness.toFixed(3),
-            target_tempo:         String(Math.round(features.tempo)),
-        });
+    // Search Spotify for tracks matching any of the given queries, up to `limit` unique results.
+    async _searchTracks(queries, limit, token) {
+        const tracks = [];
+        const seen   = new Set();
 
-        const res = await fetch(`https://api.spotify.com/v1/recommendations?${params}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        for (const query of queries) {
+            if (tracks.length >= limit) break;
+            try {
+                const params = new URLSearchParams({
+                    q:      query,
+                    type:   'track',
+                    limit:  String(Math.min(10, (limit - tracks.length) + 3)),
+                    market: 'from_token',
+                });
+                const res = await fetch(`https://api.spotify.com/v1/search?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 429) {
+                    const wait = parseInt(res.headers.get('Retry-After') || '2') * 1000;
+                    await new Promise(r => setTimeout(r, wait));
+                    continue;
+                }
+                if (!res.ok) continue;
 
-        if (res.status === 429) {
-            const wait = parseInt(res.headers.get('Retry-After') || '2') * 1000;
-            await new Promise(r => setTimeout(r, wait));
-            return this.fetchPhase(features, limit, token);
+                const data = await res.json();
+                for (const t of (data.tracks?.items || [])) {
+                    if (seen.has(t.id)) continue;
+                    seen.add(t.id);
+                    tracks.push({
+                        title:       t.name,
+                        artist:      t.artists.map(a => a.name).join(', '),
+                        album:       t.album?.name || '',
+                        albumArt:    t.album?.images?.[1]?.url || t.album?.images?.[0]?.url || null,
+                        previewUrl:  t.preview_url || null,
+                        spotifyUrl:  t.external_urls?.spotify || null,
+                        uri:         t.uri,
+                        id:          t.id,
+                        fromSpotify: true,
+                    });
+                    if (tracks.length >= limit) break;
+                }
+                if (tracks.length < limit) await new Promise(r => setTimeout(r, 100));
+            } catch { continue; }
         }
-
-        if (res.status === 403) {
-            // Recommendations API not available for this app
-            throw new Error('RECOMMENDATIONS_UNAVAILABLE');
-        }
-
-        if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            throw new Error(body.error?.message || `Spotify ${res.status}`);
-        }
-
-        const data = await res.json();
-        return (data.tracks || []).map(t => ({
-            title:      t.name,
-            artist:     t.artists.map(a => a.name).join(', '),
-            album:      t.album?.name || '',
-            albumArt:   t.album?.images?.[1]?.url || t.album?.images?.[0]?.url || null,
-            previewUrl: t.preview_url || null,
-            spotifyUrl: t.external_urls?.spotify || null,
-            uri:        t.uri,
-            id:         t.id,
-            fromSpotify: true,
-        }));
+        return tracks;
     }
 
-    // Build a 3-phase emotional journey using live Spotify data.
-    // Returns null if the API is unavailable (caller should fall back).
+    // Build search queries for a set of emotions (up to 2 per emotion for variety).
+    _queriesFor(emotions) {
+        return emotions.flatMap(e => (EMOTION_QUERIES[e] || []).slice(0, 2));
+    }
+
+    // Build a 3-phase emotional journey using Spotify Search.
+    // Returns null if results are too thin (caller falls back to musicData.js).
     async buildJourney(currentEmotions, targetEmotions, token, onProgress) {
         try {
-            const fromFeats  = avgFeatures(currentEmotions);
-            const toFeats    = avgFeatures(targetEmotions);
-            const blendFeats = blendFeatures(fromFeats, toFeats, 0.5);
+            const fromQueries  = this._queriesFor(currentEmotions);
+            const toQueries    = this._queriesFor(targetEmotions);
+            // Blend = first query from current + first from target
+            const blendQueries = [...fromQueries.slice(0, 2), ...toQueries.slice(0, 2)];
+
+            if (!fromQueries.length || !toQueries.length) return null;
 
             onProgress?.('Fetching songs for your current mood...');
-            const phase1 = await this.fetchPhase(fromFeats, 8, token);
+            const phase1 = await this._searchTracks(fromQueries, 8, token);
 
             onProgress?.('Building transition...');
-            await new Promise(r => setTimeout(r, 250));
-            const phase2 = await this.fetchPhase(blendFeats, 6, token);
+            await new Promise(r => setTimeout(r, 200));
+            const phase2 = await this._searchTracks(blendQueries, 6, token);
 
             onProgress?.('Finding destination songs...');
-            await new Promise(r => setTimeout(r, 250));
-            const phase3 = await this.fetchPhase(toFeats, 6, token);
+            await new Promise(r => setTimeout(r, 200));
+            const phase3 = await this._searchTracks(toQueries, 6, token);
 
-            // Tag phases and deduplicate by Spotify track ID
+            // Tag phases, then deduplicate by Spotify track ID
             const tagged = [
                 ...phase1.map(t => ({ ...t, phase: 'validation' })),
                 ...phase2.map(t => ({ ...t, phase: 'transition' })),
                 ...phase3.map(t => ({ ...t, phase: 'destination' })),
             ];
-            const seen = new Set();
+            const seen   = new Set();
             const unique = tagged.filter(t => {
                 if (seen.has(t.id)) return false;
                 seen.add(t.id);
                 return true;
             });
 
-            return unique.slice(0, 20);
+            // Need at least 5 tracks to consider this a success
+            return unique.length >= 5 ? unique.slice(0, 20) : null;
         } catch (err) {
-            if (err.message === 'RECOMMENDATIONS_UNAVAILABLE') return null;
-            console.warn('Spotify recommendations failed, falling back:', err.message);
+            console.warn('Spotify search failed, falling back:', err.message);
             return null;
         }
     }
@@ -146,4 +126,4 @@ class SpotifyRecommendations {
 
 const spotifyRec = new SpotifyRecommendations();
 window.spotifyRec = spotifyRec;
-window.EMOTION_FEATURES = EMOTION_FEATURES;
+window.EMOTION_QUERIES = EMOTION_QUERIES;
