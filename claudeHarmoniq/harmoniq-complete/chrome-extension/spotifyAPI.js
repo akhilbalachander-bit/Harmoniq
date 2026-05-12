@@ -202,6 +202,26 @@ class SmartSpotify {
         return null;
     }
 
+    // Parses a playlist-create response and throws with actionable messages on 401/403.
+    async _parsePlaylistCreate(res) {
+        if (res.status === 401 || res.status === 403) {
+            // Wipe the cached token so the next attempt forces a fresh auth with correct scopes.
+            this.accessToken = null;
+            await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+            throw new Error(
+                res.status === 403
+                    ? 'Spotify rejected playlist creation (missing scope). Please reconnect Spotify via the account modal to grant playlist access.'
+                    : 'Spotify session expired. Please reconnect Spotify via the account modal.'
+            );
+        }
+        const data = await res.json();
+        if (!data.id) {
+            const msg = data?.error?.message || `HTTP ${res.status}`;
+            throw new Error(`Playlist creation failed: ${msg}`);
+        }
+        return data;
+    }
+
     async createPlaylistPremium(name, description, songs, onProgress) {
         try {
             onProgress?.({ percent: 5, message: 'Authenticating with Spotify...', stats: `0/${songs.length}` });
@@ -222,8 +242,7 @@ class SmartSpotify {
                     body: JSON.stringify({ name, description, public: false })
                 }
             );
-            const playlist = await createRes.json();
-            if (!playlist.id) throw new Error('Playlist creation failed — check Spotify account permissions');
+            const playlist = await this._parsePlaylistCreate(createRes);
             onProgress?.({ percent: 35, message: 'Playlist created! Finding songs...', stats: `0/${songs.length}` });
 
             // Search songs in batches of 5 (to avoid hammering the API)
@@ -293,8 +312,7 @@ class SmartSpotify {
                     body: JSON.stringify({ name, description, public: false })
                 }
             );
-            const playlist = await createRes.json();
-            if (!playlist.id) throw new Error('Playlist creation failed — check Spotify account permissions');
+            const playlist = await this._parsePlaylistCreate(createRes);
 
             const uris = songs.map(s => s.uri).filter(Boolean);
             onProgress?.({ percent: 70, message: 'Adding songs...', stats: `${uris.length}/${songs.length}` });

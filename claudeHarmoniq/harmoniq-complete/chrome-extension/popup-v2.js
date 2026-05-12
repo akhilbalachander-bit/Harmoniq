@@ -447,7 +447,7 @@ $('createSpotifyBtn').addEventListener('click', async () => {
         toast(`Created in Spotify! ${result.tracksAdded}/${result.tracksTotal} songs added`);
         if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
     } else {
-        const isAuthErr = /auth|redirect|client|denied|cancel/i.test(result.error || '');
+        const isAuthErr = /auth|redirect|client|denied|cancel|scope|reconnect|session/i.test(result.error || '');
         try {
             await smartSpotify.copyToClipboard(currentPlaylist.map(s => ({ title: s.title, artist: s.artist })));
             if (isAuthErr) {
@@ -564,7 +564,7 @@ async function loadSavedPlaylists() {
                 toast(`Added to Spotify! ${result.tracksAdded}/${result.tracksTotal} songs`);
                 if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
             } else {
-                const isAuthErr = /auth|redirect|client|denied|cancel/i.test(result.error || '');
+                const isAuthErr = /auth|redirect|client|denied|cancel|scope|reconnect|session/i.test(result.error || '');
                 try {
                     await smartSpotify.copyToClipboard(songs);
                     if (isAuthErr) {
