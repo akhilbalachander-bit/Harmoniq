@@ -66,6 +66,34 @@ const $ = id => document.getElementById(id);
 function show(el) { if (el) el.classList.remove('hidden'); }
 function hide(el) { if (el) el.classList.add('hidden'); }
 
+// ---- Global Spotify progress helpers ----
+function spGlobalShow(p) {
+    const modal = $('spGlobalModal');
+    if (modal) show(modal);
+    if (p) {
+        $('spGlobalFill').style.width = `${p.percent}%`;
+        $('spGlobalMsg').textContent   = p.message;
+        $('spGlobalStats').textContent = p.stats || '';
+    }
+}
+function spGlobalHide() {
+    const modal = $('spGlobalModal');
+    if (modal) hide(modal);
+}
+
+async function runSpotifyCreate(name, desc, playlist, isFromSpotify) {
+    spGlobalShow({ percent: 0, message: 'Connecting to Spotify...', stats: `0/${playlist.length}` });
+    let result;
+    if (isFromSpotify && playlist.every(s => s.uri)) {
+        result = await smartSpotify.createPlaylistFromUris(name, desc, playlist, (p) => spGlobalShow(p));
+    } else {
+        const songs = playlist.map(s => ({ title: s.title, artist: s.artist }));
+        result = await smartSpotify.createPlaylistPremium(name, desc, songs, (p) => spGlobalShow(p));
+    }
+    spGlobalHide();
+    return result;
+}
+
 function toast(msg, ms = 3000) {
     const el = $('notification');
     el.textContent = msg;
@@ -320,7 +348,6 @@ $('generateBtn').addEventListener('click', async () => {
     show($('step3'));
     show($('loading'));
     hide($('results'));
-    hide($('spProgress'));
     stopAudio();
 
     const loadMsg = $('loadingMsg');
@@ -403,36 +430,14 @@ $('saveBtn').addEventListener('click', async () => {
 $('createSpotifyBtn').addEventListener('click', async () => {
     if (!currentPlaylist.length) return;
     stopAudio();
+    if (!smartSpotify.accessToken) {
+        toast('Connecting to Spotify — a sign-in window will open...', 4000);
+    }
 
     const name = $('playlistName').value.trim() || 'Harmoniq Journey';
     const desc = 'Emotional journey playlist by Harmoniq';
 
-    hide($('results'));
-    show($('spProgress'));
-    $('spFill').style.width = '0%';
-    $('spMsg').textContent  = 'Starting...';
-    $('spStats').textContent = `0/${currentPlaylist.length}`;
-
-    let result;
-
-    // If playlist came from Spotify Recommendations we already have URIs — skip search
-    if (playlistFromSpotify && currentPlaylist.every(s => s.uri)) {
-        result = await smartSpotify.createPlaylistFromUris(name, desc, currentPlaylist, (p) => {
-            $('spFill').style.width  = `${p.percent}%`;
-            $('spMsg').textContent   = p.message;
-            $('spStats').textContent = p.stats;
-        });
-    } else {
-        const songs = currentPlaylist.map(s => ({ title: s.title, artist: s.artist }));
-        result = await smartSpotify.createPlaylistPremium(name, desc, songs, (p) => {
-            $('spFill').style.width  = `${p.percent}%`;
-            $('spMsg').textContent   = p.message;
-            $('spStats').textContent = p.stats;
-        });
-    }
-
-    hide($('spProgress'));
-    show($('results'));
+    const result = await runSpotifyCreate(name, desc, currentPlaylist, playlistFromSpotify);
 
     if (result.success) {
         toast(`Created in Spotify! ${result.tracksAdded}/${result.tracksTotal} songs added`);
@@ -533,11 +538,15 @@ async function loadSavedPlaylists() {
         header.querySelector('.pl-spotify-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (!pl.songs?.length) { toast('No songs in this playlist'); return; }
+            if (!smartSpotify.accessToken) {
+                toast('Connecting to Spotify — a sign-in window will open...', 4000);
+            }
             const songs = pl.songs.map(s => ({ title: s.title, artist: s.artist }));
-            toast('Creating Spotify playlist...');
+            spGlobalShow({ percent: 0, message: 'Connecting to Spotify...', stats: `0/${songs.length}` });
             const result = await smartSpotify.createPlaylistPremium(
-                pl.name, 'Saved Harmoniq journey', songs, () => {}
+                pl.name, 'Saved Harmoniq journey', songs, (p) => spGlobalShow(p)
             );
+            spGlobalHide();
             if (result.success) {
                 toast(`Added to Spotify! ${result.tracksAdded}/${result.tracksTotal} songs`);
                 if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
