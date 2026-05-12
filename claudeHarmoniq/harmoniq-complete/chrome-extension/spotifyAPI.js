@@ -6,6 +6,10 @@
 // Find your extension ID at chrome://extensions
 // ============================================
 
+// Bump this string whenever the required scopes change to force all users to re-authorize.
+const SPOTIFY_SCOPE = 'playlist-modify-public playlist-modify-private user-read-private';
+const SPOTIFY_SCOPE_KEY = 'v2-playlist';
+
 class SmartSpotify {
     constructor() {
         this.clientId = '86bfab39244345f5acff8f58930a2638';
@@ -19,7 +23,8 @@ class SmartSpotify {
     // Load a cached token from storage without prompting the user.
     // Returns true if a valid token was found (or was refreshed).
     async loadCachedToken() {
-        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token', 'spotify_scope_key']);
+        if (stored.spotify_scope_key !== SPOTIFY_SCOPE_KEY) return false;
         if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
             this.accessToken = stored.spotify_token;
             return true;
@@ -34,18 +39,23 @@ class SmartSpotify {
     }
 
     async authenticate() {
-        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token', 'spotify_scope_key']);
 
-        if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
-            this.accessToken = stored.spotify_token;
-            return;
-        }
-
-        if (stored.spotify_refresh_token) {
-            try {
-                await this._refreshToken(stored.spotify_refresh_token);
+        // If the stored token was granted with a different scope set, invalidate it.
+        if (stored.spotify_scope_key !== SPOTIFY_SCOPE_KEY) {
+            await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token', 'spotify_scope_key']);
+        } else {
+            if (stored.spotify_token && stored.spotify_token_expiry > Date.now()) {
+                this.accessToken = stored.spotify_token;
                 return;
-            } catch { /* fall through to full auth */ }
+            }
+
+            if (stored.spotify_refresh_token) {
+                try {
+                    await this._refreshToken(stored.spotify_refresh_token);
+                    return;
+                } catch { /* fall through to full auth */ }
+            }
         }
 
         // PKCE flow
@@ -56,7 +66,7 @@ class SmartSpotify {
         authUrl.searchParams.set('client_id', this.clientId);
         authUrl.searchParams.set('response_type', 'code');
         authUrl.searchParams.set('redirect_uri', this.redirectUri);
-        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private user-read-private');
+        authUrl.searchParams.set('scope', SPOTIFY_SCOPE);
         authUrl.searchParams.set('code_challenge_method', 'S256');
         authUrl.searchParams.set('code_challenge', codeChallenge);
 
@@ -118,7 +128,8 @@ class SmartSpotify {
         await chrome.storage.local.set({
             spotify_token: data.access_token,
             spotify_token_expiry: Date.now() + (data.expires_in * 1000),
-            spotify_refresh_token: data.refresh_token
+            spotify_refresh_token: data.refresh_token,
+            spotify_scope_key: SPOTIFY_SCOPE_KEY
         });
     }
 
