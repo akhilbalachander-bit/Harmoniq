@@ -90,6 +90,10 @@ async function runSpotifyCreate(name, desc, playlist, isFromSpotify) {
         const songs = playlist.map(s => ({ title: s.title, artist: s.artist }));
         result = await smartSpotify.createPlaylistPremium(name, desc, songs, (p) => spGlobalShow(p));
     }
+    if (!result.success) {
+        spGlobalShow({ percent: 0, message: '❌ ' + (result.error || 'Spotify error'), stats: '' });
+        await new Promise(r => setTimeout(r, 1800));
+    }
     spGlobalHide();
     return result;
 }
@@ -443,11 +447,16 @@ $('createSpotifyBtn').addEventListener('click', async () => {
         toast(`Created in Spotify! ${result.tracksAdded}/${result.tracksTotal} songs added`);
         if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
     } else {
+        const isAuthErr = /auth|redirect|client|denied|cancel/i.test(result.error || '');
         try {
             await smartSpotify.copyToClipboard(currentPlaylist.map(s => ({ title: s.title, artist: s.artist })));
-            toast('Could not create directly — song list copied to clipboard');
+            if (isAuthErr) {
+                toast('Spotify not connected — open the account modal to connect. Song list copied to clipboard.', 5000);
+            } else {
+                toast(`Spotify error: ${result.error || 'unknown'} — song list copied to clipboard`, 5000);
+            }
         } catch {
-            toast(`Spotify error: ${result.error}`);
+            toast(`Spotify error: ${result.error || 'unknown'}`);
         }
     }
 });
@@ -546,16 +555,25 @@ async function loadSavedPlaylists() {
             const result = await smartSpotify.createPlaylistPremium(
                 pl.name, 'Saved Harmoniq journey', songs, (p) => spGlobalShow(p)
             );
+            if (!result.success) {
+                spGlobalShow({ percent: 0, message: '❌ ' + (result.error || 'Spotify error'), stats: '' });
+                await new Promise(r => setTimeout(r, 1800));
+            }
             spGlobalHide();
             if (result.success) {
                 toast(`Added to Spotify! ${result.tracksAdded}/${result.tracksTotal} songs`);
                 if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
             } else {
+                const isAuthErr = /auth|redirect|client|denied|cancel/i.test(result.error || '');
                 try {
                     await smartSpotify.copyToClipboard(songs);
-                    toast('Copied song list — paste into Spotify');
+                    if (isAuthErr) {
+                        toast('Spotify not connected — open the account modal to connect. Song list copied.', 5000);
+                    } else {
+                        toast(`Spotify error: ${result.error || 'unknown'} — song list copied`, 5000);
+                    }
                 } catch {
-                    toast(`Spotify error: ${result.error}`);
+                    toast(`Spotify error: ${result.error || 'unknown'}`);
                 }
             }
         });
