@@ -127,13 +127,6 @@
                 <p class="muted" id="loadingMsg">Creating your journey...</p>
             </div>
 
-            <!-- Spotify progress -->
-            <div id="spProgress" class="sp-progress hidden">
-                <p id="spMsg" class="sp-msg">Authenticating...</p>
-                <div class="sp-bar"><div class="sp-fill" id="spFill"></div></div>
-                <p id="spStats" class="muted small">0/20 songs</p>
-            </div>
-
             <!-- Results -->
             <div id="results" class="hidden">
                 <div class="journey-bar">
@@ -265,6 +258,16 @@
 
 <!-- Notification toast -->
 <div id="notification" class="toast hidden"></div>
+
+<!-- Global Spotify progress overlay (used from any panel) -->
+<div id="spGlobalModal" class="sp-global-modal hidden">
+    <div class="sp-global-box">
+        <div class="sp-global-icon">🎵</div>
+        <p id="spGlobalMsg" class="sp-msg">Connecting to Spotify...</p>
+        <div class="sp-bar"><div class="sp-fill" id="spGlobalFill"></div></div>
+        <p id="spGlobalStats" class="muted small"></p>
+    </div>
+</div>
 
 <!-- Firebase (local bundles — MV3 blocks remote scripts) -->
 <script src="firebase-app-compat.js"></script>

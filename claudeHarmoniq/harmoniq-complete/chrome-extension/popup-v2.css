@@ -726,6 +726,41 @@ details[open] .sp-setup-toggle::before { content: '▾'; }
 }
 .sp-copy-uri-btn:hover { background: rgba(255,255,255,0.15); }
 
+/* ---- Global Spotify Progress Modal ---- */
+.sp-global-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    backdrop-filter: blur(4px);
+}
+.sp-global-box {
+    background: #1a1a2e;
+    border: 1px solid rgba(29,185,84,0.35);
+    border-radius: 16px;
+    padding: 1.5rem 1.25rem;
+    width: 270px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+.sp-global-icon { font-size: 2rem; line-height: 1; }
+.sp-global-box .sp-bar { width: 100%; }
+
+/* Spinning animation for global icon while loading */
+.sp-global-modal:not(.hidden) .sp-global-icon {
+    animation: sp-pulse 1.4s ease-in-out infinite;
+}
+@keyframes sp-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.65; transform: scale(0.92); }
+}
+
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
