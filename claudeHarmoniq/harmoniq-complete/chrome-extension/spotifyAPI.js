@@ -56,7 +56,7 @@ class SmartSpotify {
         authUrl.searchParams.set('client_id', this.clientId);
         authUrl.searchParams.set('response_type', 'code');
         authUrl.searchParams.set('redirect_uri', this.redirectUri);
-        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private user-read-private');
+        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private');
         authUrl.searchParams.set('code_challenge_method', 'S256');
         authUrl.searchParams.set('code_challenge', codeChallenge);
 
@@ -234,13 +234,10 @@ class SmartSpotify {
         try {
             onProgress?.({ percent: 5, message: 'Authenticating with Spotify...', stats: `0/${songs.length}` });
             await this.authenticate();
-            onProgress?.({ percent: 20, message: 'Authenticated!', stats: `0/${songs.length}` });
-
-            const userId = await this.getUserId();
             onProgress?.({ percent: 25, message: 'Creating playlist...', stats: `0/${songs.length}` });
 
             const createRes = await this.fetchWithRetry(
-                `https://api.spotify.com/v1/users/${userId}/playlists`,
+                `https://api.spotify.com/v1/me/playlists`,
                 {
                     method: 'POST',
                     headers: {
@@ -310,12 +307,10 @@ class SmartSpotify {
         try {
             onProgress?.({ percent: 10, message: 'Authenticating with Spotify...', stats: `0/${songs.length}` });
             await this.authenticate();
-
-            const userId = await this.getUserId();
             onProgress?.({ percent: 30, message: 'Creating playlist...', stats: `0/${songs.length}` });
 
             const createRes = await this.fetchWithRetry(
-                `https://api.spotify.com/v1/users/${userId}/playlists`,
+                `https://api.spotify.com/v1/me/playlists`,
                 {
                     method: 'POST',
                     headers: {
