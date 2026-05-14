@@ -132,7 +132,10 @@ class SmartSpotify {
                 client_id: this.clientId
             })
         });
-        if (!res.ok) throw new Error('Token refresh failed');
+        if (!res.ok) {
+            await chrome.storage.local.remove(['spotify_refresh_token']);
+            throw new Error('Token refresh failed');
+        }
         const data = await res.json();
         this.accessToken = data.access_token;
         await chrome.storage.local.set({
@@ -146,6 +149,11 @@ class SmartSpotify {
         const res = await fetch('https://api.spotify.com/v1/me', {
             headers: { 'Authorization': `Bearer ${this.accessToken}` }
         });
+        if (res.status === 401 || res.status === 403) {
+            this.accessToken = null;
+            await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+            throw new Error('Spotify session expired. Please reconnect Spotify via the account modal.');
+        }
         if (!res.ok) throw new Error('Failed to get Spotify user profile');
         const data = await res.json();
         return data.id;
@@ -265,7 +273,7 @@ class SmartSpotify {
             if (uris.length > 0) {
                 onProgress?.({ percent: 87, message: 'Adding songs to playlist...', stats: `${uris.length}/${songs.length}` });
                 for (let i = 0; i < uris.length; i += 100) {
-                    await this.fetchWithRetry(
+                    const addRes = await this.fetchWithRetry(
                         `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
                         {
                             method: 'POST',
@@ -276,6 +284,11 @@ class SmartSpotify {
                             body: JSON.stringify({ uris: uris.slice(i, i + 100) })
                         }
                     );
+                    if (addRes.status === 401 || addRes.status === 403) {
+                        this.accessToken = null;
+                        await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+                        throw new Error('Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.');
+                    }
                 }
             }
 
@@ -318,7 +331,7 @@ class SmartSpotify {
             onProgress?.({ percent: 70, message: 'Adding songs...', stats: `${uris.length}/${songs.length}` });
 
             for (let i = 0; i < uris.length; i += 100) {
-                await this.fetchWithRetry(
+                const addRes = await this.fetchWithRetry(
                     `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
                     {
                         method: 'POST',
@@ -329,6 +342,11 @@ class SmartSpotify {
                         body: JSON.stringify({ uris: uris.slice(i, i + 100) })
                     }
                 );
+                if (addRes.status === 401 || addRes.status === 403) {
+                    this.accessToken = null;
+                    await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+                    throw new Error('Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.');
+                }
             }
 
             onProgress?.({ percent: 100, message: 'Done!', stats: `${uris.length}/${songs.length} added` });
