@@ -33,8 +33,21 @@ class SmartSpotify {
         return false;
     }
 
+    _hasRequiredScopes(scopeString) {
+        const granted = (scopeString || '').split(' ');
+        return granted.includes('playlist-modify-public');
+    }
+
     async authenticate() {
-        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
+        const stored = await chrome.storage.local.get(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token', 'spotify_scopes']);
+
+        // If stored scopes are missing playlist-modify-public, wipe everything and force fresh PKCE.
+        // Refresh tokens inherit the original scopes so refreshing won't help.
+        if (stored.spotify_token && !this._hasRequiredScopes(stored.spotify_scopes)) {
+            await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token', 'spotify_scopes']);
+            stored.spotify_token = null;
+            stored.spotify_refresh_token = null;
+        }
 
         // Treat tokens expiring within 5 minutes as already expired to avoid mid-upload failures.
         if (stored.spotify_token && stored.spotify_token_expiry > Date.now() + 5 * 60 * 1000) {
@@ -121,7 +134,8 @@ class SmartSpotify {
         await chrome.storage.local.set({
             spotify_token: data.access_token,
             spotify_token_expiry: Date.now() + (data.expires_in * 1000),
-            spotify_refresh_token: data.refresh_token
+            spotify_refresh_token: data.refresh_token,
+            spotify_scopes: data.scope || ''
         });
     }
 
@@ -144,7 +158,8 @@ class SmartSpotify {
         await chrome.storage.local.set({
             spotify_token: data.access_token,
             spotify_token_expiry: Date.now() + (data.expires_in * 1000),
-            ...(data.refresh_token ? { spotify_refresh_token: data.refresh_token } : {})
+            ...(data.refresh_token ? { spotify_refresh_token: data.refresh_token } : {}),
+            ...(data.scope ? { spotify_scopes: data.scope } : {})
         });
     }
 
