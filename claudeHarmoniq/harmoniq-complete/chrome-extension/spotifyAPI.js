@@ -247,7 +247,7 @@ class SmartSpotify {
                         'Authorization': `Bearer ${this.accessToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, description, public: false })
+                    body: JSON.stringify({ name, description, public: true })
                 }
             );
             const playlist = await this._parsePlaylistCreate(createRes);
@@ -341,7 +341,7 @@ class SmartSpotify {
                         'Authorization': `Bearer ${this.accessToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, description, public: false })
+                    body: JSON.stringify({ name, description, public: true })
                 }
             );
             const playlist = await this._parsePlaylistCreate(createRes);
