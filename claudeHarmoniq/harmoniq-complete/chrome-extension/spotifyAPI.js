@@ -60,6 +60,8 @@ class SmartSpotify {
         authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private');
         authUrl.searchParams.set('code_challenge_method', 'S256');
         authUrl.searchParams.set('code_challenge', codeChallenge);
+        // Force Spotify to show the consent screen so scopes are always explicitly granted.
+        authUrl.searchParams.set('show_dialog', 'true');
 
         return new Promise((resolve, reject) => {
             chrome.identity.launchWebAuthFlow({ url: authUrl.toString(), interactive: true }, async (responseUrl) => {
@@ -302,7 +304,10 @@ class SmartSpotify {
                         );
                         if (addRes.status === 401 || addRes.status === 403) {
                             await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
-                            throw new Error('Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.');
+                            const msg = addRes.status === 403
+                                ? 'Spotify blocked adding tracks (missing scope). Please reconnect Spotify via the account modal.'
+                                : 'Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.';
+                            throw new Error(msg);
                         }
                     }
                 }
