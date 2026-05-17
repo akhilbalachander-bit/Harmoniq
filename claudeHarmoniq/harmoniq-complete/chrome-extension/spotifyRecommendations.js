@@ -40,7 +40,7 @@ class SpotifyRecommendations {
                     q:      query,
                     type:   'track',
                     limit:  String(Math.min(10, (limit - tracks.length) + 3)),
-                    market: 'from_token',
+                    market: 'US',
                 });
                 const res = await fetch(`https://api.spotify.com/v1/search?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }

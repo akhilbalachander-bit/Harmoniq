@@ -35,7 +35,7 @@ class SmartSpotify {
 
     _hasRequiredScopes(scopeString) {
         const granted = (scopeString || '').split(' ');
-        return granted.includes('playlist-modify-public');
+        return granted.includes('playlist-modify-public') && granted.includes('user-read-private');
     }
 
     async authenticate() {
@@ -70,7 +70,7 @@ class SmartSpotify {
         authUrl.searchParams.set('client_id', this.clientId);
         authUrl.searchParams.set('response_type', 'code');
         authUrl.searchParams.set('redirect_uri', this.redirectUri);
-        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private');
+        authUrl.searchParams.set('scope', 'playlist-modify-public playlist-modify-private user-read-private');
         authUrl.searchParams.set('code_challenge_method', 'S256');
         authUrl.searchParams.set('code_challenge', codeChallenge);
         // Force Spotify to show the consent screen so scopes are always explicitly granted.
