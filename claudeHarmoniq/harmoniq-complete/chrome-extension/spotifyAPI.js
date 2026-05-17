@@ -283,6 +283,9 @@ class SmartSpotify {
                         }
                     );
                     if (addRes.status === 401 || addRes.status === 403) {
+                        const errBody = await addRes.json().catch(() => ({}));
+                        const spotifyMsg = errBody?.error?.message || '';
+                        console.error(`Add-tracks failed ${addRes.status}:`, errBody);
                         // Token expired mid-upload — try a silent refresh once before giving up.
                         this.accessToken = null;
                         await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry']);
@@ -292,7 +295,7 @@ class SmartSpotify {
                         }
                         if (!this.accessToken) {
                             await chrome.storage.local.remove(['spotify_refresh_token']);
-                            throw new Error('Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.');
+                            throw new Error(`Spotify error ${addRes.status}: ${spotifyMsg || 'blocked adding tracks'}. Please reconnect Spotify via the account modal.`);
                         }
                         addRes = await this.fetchWithRetry(
                             `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
@@ -303,11 +306,11 @@ class SmartSpotify {
                             }
                         );
                         if (addRes.status === 401 || addRes.status === 403) {
+                            const retryBody = await addRes.json().catch(() => ({}));
+                            const retryMsg = retryBody?.error?.message || '';
+                            console.error(`Add-tracks retry failed ${addRes.status}:`, retryBody);
                             await chrome.storage.local.remove(['spotify_token', 'spotify_token_expiry', 'spotify_refresh_token']);
-                            const msg = addRes.status === 403
-                                ? 'Spotify blocked adding tracks (missing scope). Please reconnect Spotify via the account modal.'
-                                : 'Spotify session expired while adding tracks. Please reconnect Spotify via the account modal.';
-                            throw new Error(msg);
+                            throw new Error(`Spotify error ${addRes.status}: ${retryMsg || 'blocked adding tracks'}. Please reconnect Spotify via the account modal.`);
                         }
                     }
                 }
