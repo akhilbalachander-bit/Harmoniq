@@ -485,17 +485,23 @@ async function loadSavedPlaylists() {
     container.innerHTML = '<p class="empty-state">Loading...</p>';
 
     const local = await playlistStorage.getAll();
+    console.log('[Harmoniq] local playlists:', local.length, local);
     let playlists = [...local];
 
+    console.log('[Harmoniq] isSignedIn:', authSystem.isSignedIn());
     if (authSystem.isSignedIn()) {
         try {
             const cloud = await cloudStorage.getUserPlaylists();
+            console.log('[Harmoniq] cloud playlists:', cloud.length, cloud);
             const localIds = new Set(local.map(p => p.id));
             const onlyCloud = cloud.filter(p => !localIds.has(p.id));
             playlists = [...local, ...onlyCloud];
-        } catch { /* show local playlists if cloud fetch fails */ }
+        } catch (err) {
+            console.error('[Harmoniq] cloud fetch failed:', err);
+        }
     }
 
+    console.log('[Harmoniq] total playlists to render:', playlists.length);
     container.innerHTML = '';
     if (!playlists.length) {
         container.innerHTML = '<p class="empty-state">No saved playlists yet</p>';
