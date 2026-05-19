@@ -420,12 +420,19 @@ $('saveBtn').addEventListener('click', async () => {
     if (!name) { toast('Enter a playlist name first'); return; }
     try {
         await playlistStorage.save(name, currentPlaylist, currentEmotions, targetEmotions, false);
-        toast('Saved!');
         if (authSystem.isSignedIn()) {
             try {
                 await cloudStorage.savePlaylist(name, currentPlaylist, currentEmotions, targetEmotions, false);
-                toast('Saved to cloud!');
-            } catch { /* local save already done */ }
+                toast('Saved locally and to cloud!', 3000);
+            } catch {
+                toast('Saved locally!', 3000);
+            }
+        } else {
+            toast('Saved!', 3000);
+        }
+        // Refresh playlists tab if it is currently active
+        if ($('panelPlaylists')?.classList.contains('active')) {
+            loadSavedPlaylists();
         }
     } catch { toast('Save failed'); }
 });
