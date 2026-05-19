@@ -430,35 +430,16 @@ $('saveBtn').addEventListener('click', async () => {
     } catch { toast('Save failed'); }
 });
 
-// ---- Create in Spotify ----
+// ---- Export to Spotify via TuneMyMusic ----
 $('createSpotifyBtn').addEventListener('click', async () => {
     if (!currentPlaylist.length) return;
     stopAudio();
-    if (!smartSpotify.accessToken) {
-        toast('Connecting to Spotify — a sign-in window will open...', 4000);
-    }
-
-    const name = $('playlistName').value.trim() || 'Harmoniq Journey';
-    const desc = 'Emotional journey playlist by Harmoniq';
-
-    const result = await runSpotifyCreate(name, desc, currentPlaylist, playlistFromSpotify);
-
-    if (result.success) {
-        toast(`Created in Spotify! ${result.tracksAdded}/${result.tracksTotal} songs added`);
-        if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
-    } else {
-        const isAuthErr = /auth|redirect|client|denied|cancel|scope|reconnect|session/i.test(result.error || '');
-        try {
-            await smartSpotify.copyToClipboard(currentPlaylist.map(s => ({ title: s.title, artist: s.artist })));
-            if (isAuthErr) {
-                toast('Spotify not connected — open the account modal to connect. Song list copied to clipboard.', 5000);
-            } else {
-                toast(`Spotify error: ${result.error || 'unknown'} — song list copied to clipboard`, 5000);
-            }
-        } catch {
-            toast(`Spotify error: ${result.error || 'unknown'}`);
-        }
-    }
+    const text = currentPlaylist.map(s => `${s.artist} - ${s.title}`).join('\n');
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch { /* clipboard may fail silently */ }
+    chrome.tabs.create({ url: 'https://www.tunemymusic.com/transfer' });
+    toast('Playlist copied! Paste it into the TuneMyMusic text box to add to Spotify.', 6000);
 });
 
 // ---- Spotify connect / disconnect (banner + modal buttons) ----
@@ -547,35 +528,12 @@ async function loadSavedPlaylists() {
         header.querySelector('.pl-spotify-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (!pl.songs?.length) { toast('No songs in this playlist'); return; }
-            if (!smartSpotify.accessToken) {
-                toast('Connecting to Spotify — a sign-in window will open...', 4000);
-            }
-            const songs = pl.songs.map(s => ({ title: s.title, artist: s.artist }));
-            spGlobalShow({ percent: 0, message: 'Connecting to Spotify...', stats: `0/${songs.length}` });
-            const result = await smartSpotify.createPlaylistPremium(
-                pl.name, 'Saved Harmoniq journey', songs, (p) => spGlobalShow(p)
-            );
-            if (!result.success) {
-                spGlobalShow({ percent: 0, message: '❌ ' + (result.error || 'Spotify error'), stats: '' });
-                await new Promise(r => setTimeout(r, 1800));
-            }
-            spGlobalHide();
-            if (result.success) {
-                toast(`Added to Spotify! ${result.tracksAdded}/${result.tracksTotal} songs`);
-                if (result.playlistUrl) chrome.tabs.create({ url: result.playlistUrl });
-            } else {
-                const isAuthErr = /auth|redirect|client|denied|cancel|scope|reconnect|session/i.test(result.error || '');
-                try {
-                    await smartSpotify.copyToClipboard(songs);
-                    if (isAuthErr) {
-                        toast('Spotify not connected — open the account modal to connect. Song list copied.', 5000);
-                    } else {
-                        toast(`Spotify error: ${result.error || 'unknown'} — song list copied`, 5000);
-                    }
-                } catch {
-                    toast(`Spotify error: ${result.error || 'unknown'}`);
-                }
-            }
+            const text = pl.songs.map(s => `${s.artist} - ${s.title}`).join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch { /* clipboard may fail silently */ }
+            chrome.tabs.create({ url: 'https://www.tunemymusic.com/transfer' });
+            toast('Playlist copied! Paste it into the TuneMyMusic text box to add to Spotify.', 6000);
         });
 
         header.querySelector('.pl-del').addEventListener('click', async (e) => {
