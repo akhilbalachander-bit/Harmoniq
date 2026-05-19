@@ -473,8 +473,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const panel = btn.dataset.panel;
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        $('panel' + panel).classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); hide(p); });
+        const activePanel = $('panel' + panel);
+        activePanel.classList.add('active');
+        show(activePanel);
         if (panel === 'Playlists') loadSavedPlaylists();
     });
 });
