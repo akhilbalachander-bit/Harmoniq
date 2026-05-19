@@ -507,7 +507,8 @@ async function loadSavedPlaylists() {
         container.innerHTML = '<p class="empty-state">No saved playlists yet</p>';
         return;
     }
-    playlists.forEach(pl => {
+    playlists.forEach((pl, idx) => {
+        try {
         const card = document.createElement('div');
         card.className = 'pl-card';
 
@@ -575,6 +576,9 @@ async function loadSavedPlaylists() {
         card.appendChild(header);
         card.appendChild(tracksDiv);
         container.appendChild(card);
+        } catch (err) {
+            console.error(`[Harmoniq] render error at playlist ${idx}:`, err, pl);
+        }
     });
 }
 
