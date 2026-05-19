@@ -475,8 +475,21 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 // ---- Load Saved Playlists ----
 async function loadSavedPlaylists() {
     const container = $('savedPlaylists');
+    container.innerHTML = '<p class="empty-state">Loading...</p>';
+
+    const local = await playlistStorage.getAll();
+    let playlists = [...local];
+
+    if (authSystem.isSignedIn()) {
+        try {
+            const cloud = await cloudStorage.getUserPlaylists();
+            const localIds = new Set(local.map(p => p.id));
+            const onlyCloud = cloud.filter(p => !localIds.has(p.id));
+            playlists = [...local, ...onlyCloud];
+        } catch { /* show local playlists if cloud fetch fails */ }
+    }
+
     container.innerHTML = '';
-    const playlists = await playlistStorage.getAll();
     if (!playlists.length) {
         container.innerHTML = '<p class="empty-state">No saved playlists yet</p>';
         return;
@@ -539,6 +552,9 @@ async function loadSavedPlaylists() {
         header.querySelector('.pl-del').addEventListener('click', async (e) => {
             e.stopPropagation();
             await playlistStorage.deletePlaylist(pl.id);
+            if (authSystem.isSignedIn()) {
+                try { await cloudStorage.deletePlaylist(pl.id); } catch { /* ignore */ }
+            }
             await loadSavedPlaylists();
             toast('Playlist deleted');
         });
