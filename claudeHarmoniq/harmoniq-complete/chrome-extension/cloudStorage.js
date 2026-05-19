@@ -26,11 +26,14 @@ class CloudStorage {
         await this.init();
         const user = authSystem.getCurrentUser();
         const snapshot = await firebaseManager.db.collection('playlists')
-            .where('userId', '==', user.uid).orderBy('createdAt', 'desc').get();
-        return snapshot.docs.map(doc => ({
-            id: doc.id, ...doc.data(),
-            createdDate: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A'
-        }));
+            .where('userId', '==', user.uid).get();
+        return snapshot.docs
+            .map(doc => ({
+                id: doc.id, ...doc.data(),
+                createdDate: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A',
+                _ts: doc.data().createdAt?.toMillis() || 0
+            }))
+            .sort((a, b) => b._ts - a._ts);
     }
 
     async deletePlaylist(playlistId) {
