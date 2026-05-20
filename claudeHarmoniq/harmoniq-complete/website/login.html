@@ -460,7 +460,7 @@
             setLoading(true);
             try {
                 const provider = new firebase.auth.GoogleAuthProvider();
-                await auth.signInWithPopup(provider);
+                await auth.signInWithRedirect(provider);
             } catch (err) {
                 showError(ERROR_MSGS[err.code] || err.message);
                 setLoading(false);
@@ -509,6 +509,11 @@
         });
 
         document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
+
+        // Handle redirect result on page load
+        auth.getRedirectResult().catch(err => {
+            if (err.code) showError(ERROR_MSGS[err.code] || err.message);
+        });
 
         auth.onAuthStateChanged(async (user) => {
             setLoading(false);
