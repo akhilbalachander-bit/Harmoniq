@@ -59,14 +59,5 @@ document.querySelectorAll('.emo-card').forEach(card => {
     card.addEventListener('mouseleave', () => { card.style.transform = ''; });
 });
 
-// Download button
-document.querySelectorAll('.btn-cta, .btn-nav, .btn-hero-primary').forEach(btn => {
-    btn.addEventListener('click', e => {
-        if (btn.getAttribute('href') === '#' || btn.getAttribute('href') === '#download') {
-            e.preventDefault();
-            alert('🎉 Chrome Web Store listing coming soon!\\n\\nFor early access, check our GitHub.');
-        }
-    });
-});
 
 console.log('🎵 Harmoniq website loaded');
